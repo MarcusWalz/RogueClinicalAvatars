@@ -1,5 +1,5 @@
 
-getStableDefinition = function (group_number) {
+get_stable_dose_definition = function (group_number) {
   
 # 
 # ARGS:
