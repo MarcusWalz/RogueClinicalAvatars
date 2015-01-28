@@ -7,43 +7,40 @@ source("initial_dosing.R")
 processAvatars = function(avatars, protocol,
   initial_dose, num_days_to_simulate, max_dose, num_replicates, max_time, initial_seed) {
 
+  # set inital seed
+  set.seed(initial_seed)
   # set init dose
   avatars<-initial_dose(avatars,initial_dose)
 
   num_avatars = nrow(avatars)
-  # set inital seed
-  set.seed(initial_seed);
-  rseed = replicate(num_replicates, rnorm(nrow(avatars)))
 
-#  inr_error_dist = array(
-#      rnorm(num_days_to_simulate*num_avatars*num_replicates,0,0.1)
-#    , dim=c(num_days_to_simulate, num_replicates, num_avatars)
-#  )  
+  # seed original array
+  rseed = array( sample(num_replicates*num_avatars)
+               , dim=c(num_avatars,num_replicates))
 
 
   apply(rseed, 2, function(seed_vect) {
-    avatars[, "seed"] <- seed_vect
-    cnames = colnames(avatars)
-    apply(avatars, 1, function(avatar) {
-      set.seed( avatar["seed"] )
-      
-      random_nums= 
-        round(abs(rnorm(num_days_to_simulate)*100*num_days_to_simulate)) 
 
-      inr          = array(NA, num_days_to_simulate)
-      inr_check    = array(0, num_days_to_simulate)
-      dose         = array(NA, num_days_to_simulate)
+    avatars[, "seed"] <- seed_vect
+
+    apply(avatars, 1, function(avatar) {
+      set.seed(as.numeric(avatar["seed"]))
+      
+
+      inr       = array(NA, num_days_to_simulate)
+      inr_check = array(0, num_days_to_simulate)
+      dose      = array(NA, num_days_to_simulate)
       # keep track of the dose superpositioning for each avatar
       # Cs_super_out = array(0, dim=c(max_time*num_days_to_simulate+1
       #                    , num_replicates)) 
-
       dose[1] = as.numeric(avatar["InitialDose"])
       Cs_rows = max_time * num_days_to_simulate+1
       Cs = matrix(0, nrow = Cs_rows, ncol=num_days_to_simulate)
       Cs_super = 0
 
+      inr_errors = rnorm(num_days_to_simulate, 0, 0.1)
+
       for(day in 1:num_days_to_simulate) {
-        print(day)
         pill = dose_cat(dose[day], max_dose)
         test_patient = hamberg_2007( pill
                                    , Cs_super
@@ -52,9 +49,10 @@ processAvatars = function(avatars, protocol,
                                    , as.character(avatar["VKORC1G"])
                                    , 1
                                    , max_time * num_days_to_simulate
-                                   , avatar["seed"]
+                                   , as.numeric(avatar["seed"])
                                    )
-        inr_error = rnorm(1,0,0.1)
+
+        inr_error = inr_errors[day] # rnorm(1,0,0.1)
         measured_inr = round(test_patient$INRv[day*24+1] + inr_error, digits=1)
 
         if(is.na(measured_inr)) {
@@ -76,7 +74,7 @@ processAvatars = function(avatars, protocol,
         }
       }
 
-      list("INR" = inr, "Dose" = dose, "Check" = inr_check)
+      as.data.frame(list("INR" = inr, "Dose" = dose, "Check" = inr_check))
     })
   })
 }
@@ -84,4 +82,4 @@ processAvatars = function(avatars, protocol,
 
 avatars <- read.table("data_semifinal.txt", sep=" ", header=T)
 
-processAvatars(avatars[1:2,], coumagen_pharm, "pginitial_couma1", 50, 15, 2, 24, 4321)
+out = processAvatars(avatars[1:3,], coumagen_pharm, "pginitial_couma1", 50, 15, 2, 24, 4321)
