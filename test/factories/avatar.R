@@ -1,7 +1,7 @@
 
 # Generates a random avatar. Nothing Fancy goes on to make the avatar realistic.
 # E.g. BMI is completly independent of height and weight.
-random_avatar = function () {
+avatar_random = function () {
   list (
     "GENDER" = sample(c("M", "F"), 1)
   , "AGE"    = rnorm(1,50,10)
@@ -18,4 +18,9 @@ random_avatar = function () {
   , "CONDITION" = "condition_1"
   , "BMI" = rnorm(1,28,3)
   )
+}
+
+# Grabs a random avatar from a dataframe
+avatar_random_from_table = function(avatars) {
+  avatars[sample(nrow(avatar),1), ]
 }
