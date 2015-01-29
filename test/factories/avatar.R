@@ -1,4 +1,6 @@
 
+# Generates a random avatar. Nothing Fancy goes on to make the avatar realistic.
+# E.g. BMI is completly independent of height and weight.
 random_avatar = function () {
   list (
     "GENDER" = sample(c("M", "F"), 1)
@@ -17,5 +19,3 @@ random_avatar = function () {
   , "BMI" = rnorm(1,28,3)
   )
 }
-
-random_avatar()
