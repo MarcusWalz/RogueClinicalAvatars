@@ -56,4 +56,4 @@ ttr_mean = function(ttr_functions) {
 }
 
 test_simulation = list(days = 100) 
-ttr_bad = ttr_smooth(ttr_add(c(ttr_linear(5,2), ttr_spike(), ttr_noise())))
+ttr_bad = ttr_smooth(c(ttr_linear(5,2), ttr_spike(), ttr_noise()))
