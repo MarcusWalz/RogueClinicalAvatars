@@ -188,90 +188,97 @@ kovacs5 <- list("15" = list("<2" = c(15,15,15),
 
 # Kovacs protocol (7 days)
 
-kovacs <- function(INR, dose, day, maxDose = 10){
+kovacs_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day){
 
-	maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
-	
-    	# For days 1-7, the dosing regimen is pre-specified and stored in a list
-	# corresponding to the day of adjustment (_3 and _5). After day 7, dose
-	# is percent-adjusted based on INR
+    maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
+    
+        # For days 1-7, the dosing regimen is pre-specified and stored in a list
+    # corresponding to the day of adjustment (_3 and _5). After day 7, dose
+    # is percent-adjusted based on INR
 
-	if(day == 1){
-    	dose[2] = dose[1]
-    	return(dose)
-    } else if(day == 2){
-		# INR is converted to a string to use as a list index
-		INR_str <- ifelse(INR < 1.3, "<1.3", ifelse(INR > 3, ">3", as.character(INR)))
-		dose[3:4] <- kovacs3[[INR_str]]
-		return(dose[1:maxDays])
-	} else if(day == 4){
-		# This conversion is more complicated because the max INR differs based on previous INR
-		INR_str <- ifelse(INR < 2, "<2", ifelse(INR > 4 & dose[4] == 0, ">4", ifelse(INR > 3.5 & dose[4] != 0, ">3.5", as.character(INR))))
-		dose[5:7] <- kovacs5[[as.character(dose[4])]][[INR_str]]
-		return(dose[1:maxDays]) 
-	} else {
-		stop("Something is wrong in Kovacs. This protocol is only used for the first 7 days. Check what you did!!")
-	}
+    if(day == 1){
+        dose[2] = dose[1]
+        return(dose)
+      } else if(day == 2){
+      # INR is converted to a string to use as a list index
+      INR_str <- ifelse(INR < 1.3, "<1.3", ifelse(INR > 3, ">3", as.character(INR)))
+      dose[3:4] <- kovacs3[[INR_str]]
+      return(dose[1:maxDays])
+    } else if(day == 4){
+      # This conversion is more complicated because the max INR differs based on previous INR
+      INR_str <- ifelse(INR < 2, "<2", ifelse(INR > 4 & dose[4] == 0, ">4", ifelse(INR > 3.5 & dose[4] != 0, ">3.5", as.character(INR))))
+      dose[5:7] <- kovacs5[[as.character(dose[4])]][[INR_str]]
+      return(dose[1:maxDays]) 
+    } else {
+      stop("Something is wrong in Kovacs. This protocol is only used for the first 7 days. Check what you did!!")
+    }
 
+  }
 }
 
 # Intermountain protocol (INR-based dose adjustment; unlimited)
 
-intermt <- function(INR, dose, day, maxDose = 10){
+intermt_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
 
-	maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
-	
-	if(dose[day] == 0){ # Only need to check last dose because only INR >= 5 will have last dose = 0
-		prev_dose <- dose[(day-2)]
-	} else {
-		prev_dose <- dose[day]
-    	}
+  function(INR, dose, day){
 
-	if(INR < 1){
-		warning("Your INR was under 1 while using Intermountain...please take note")
-		dose[(day+1)] <- prev_dose
-		return(dose[1:maxDays])
-	} else if(INR >= 1 & INR < 1.6){
-		# Immediate extra dose (average of days 5-7 for day 8)
-		dose[(day+1)] <- ifelse(day == 7, mean(dose[5:7]), prev_dose*2)
-		dose[(day+2):(day+5)] <- min(prev_dose*1.1, 10)
-		return(dose[1:maxDays])
-	} else if(INR >= 1.6 & INR < 1.8){
-		# Immediate extra half-dose (average of days 5-7 for day 8)
-		dose[(day+1)] <- ifelse(day == 7, mean(dose[5:7]), prev_dose*1.5)			
-		dose[(day+2):(day+7)] <- min(prev_dose*1.05, 10)
-		return(dose[1:maxDays])
-	} else if(INR >= 1.8 & INR < 2){
-		if(dose[day] == 0){ 
-			dose[(day+1):(day+14)] <- prev_dose*0.85
-		} else {
-			dose[(day+1):(day+14)] <- min(prev_dose*1.05, 10)
-		}
-		return(dose[1:maxDays])
-	} else if(INR >= 2 & INR <= 3){
-		if(dose[day] == 0){
-			dose[(day+1):(day+14)] <- prev_dose*0.85
-		} else {
-			dose[(day+1):(day+14)] <- prev_dose
-		}
-		return(dose[1:maxDays])
-	} else if(INR > 3 & INR < 3.4){
-		if(dose[day] == 0){
-			dose[(day+1):(day+14)] <- prev_dose*0.85
-		} else {
-			dose[(day+1):(day+14)] <- prev_dose*0.95 
-		}
-		return(dose[1:maxDays])
-	} else if(INR >= 3.4 & INR < 5){
-		ifelse(INR < 4, dose[(day+1)] <- prev_dose*0.5, dose[(day+1)] <- 0)
-		dose[(day+2):(day+7)] <- prev_dose*0.9 
-		return(dose[1:maxDays])
-	} else if(INR >= 5){
-		dose[(day+1):min(day+2)] <- 0 
-		return(dose[1:maxDays])
-	} else {
-		stop("Something is wrong in Intermountain...How did you reach here?")
-	}
+    maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
+    
+    if(dose[day] == 0){ # Only need to check last dose because only INR >= 5 will have last dose = 0
+      prev_dose <- dose[(day-2)]
+    } else {
+      prev_dose <- dose[day]
+        }
+
+    if(INR < 1){
+      warning("Your INR was under 1 while using Intermountain...please take note")
+      dose[(day+1)] <- prev_dose
+      return(dose[1:maxDays])
+    } else if(INR >= 1 & INR < 1.6){
+      # Immediate extra dose (average of days 5-7 for day 8)
+      dose[(day+1)] <- ifelse(day == 7, mean(dose[5:7]), prev_dose*2)
+      dose[(day+2):(day+5)] <- min(prev_dose*1.1, 10)
+      return(dose[1:maxDays])
+    } else if(INR >= 1.6 & INR < 1.8){
+      # Immediate extra half-dose (average of days 5-7 for day 8)
+      dose[(day+1)] <- ifelse(day == 7, mean(dose[5:7]), prev_dose*1.5)			
+      dose[(day+2):(day+7)] <- min(prev_dose*1.05, 10)
+      return(dose[1:maxDays])
+    } else if(INR >= 1.8 & INR < 2){
+      if(dose[day] == 0){ 
+        dose[(day+1):(day+14)] <- prev_dose*0.85
+      } else {
+        dose[(day+1):(day+14)] <- min(prev_dose*1.05, 10)
+      }
+      return(dose[1:maxDays])
+    } else if(INR >= 2 & INR <= 3){
+      if(dose[day] == 0){
+        dose[(day+1):(day+14)] <- prev_dose*0.85
+      } else {
+        dose[(day+1):(day+14)] <- prev_dose
+      }
+      return(dose[1:maxDays])
+    } else if(INR > 3 & INR < 3.4){
+      if(dose[day] == 0){
+        dose[(day+1):(day+14)] <- prev_dose*0.85
+      } else {
+        dose[(day+1):(day+14)] <- prev_dose*0.95 
+      }
+      return(dose[1:maxDays])
+    } else if(INR >= 3.4 & INR < 5){
+      ifelse(INR < 4, dose[(day+1)] <- prev_dose*0.5, dose[(day+1)] <- 0)
+      dose[(day+2):(day+7)] <- prev_dose*0.9 
+      return(dose[1:maxDays])
+    } else if(INR >= 5){
+      dose[(day+1):min(day+2)] <- 0 
+      return(dose[1:maxDays])
+    } else {
+      stop("Something is wrong in Intermountain...How did you reach here?")
+    }
+  }
 }
 
 
@@ -282,120 +289,135 @@ intermt <- function(INR, dose, day, maxDose = 10){
 # 2*{predicted daily dose}
 # After day 7, uses Intermountain to do INR-based adjustment
 
-coumagen_pharm <- function(INR, dose, day, maxDose = 10){
-	
-	pharm_coeff <- (.5*dose[1]*7)/35
+coumagen_pharm_protocol = function(avatar, simulation) {
+    maxDose = simulation$max_dose
+    function(INR, dose, day){
+      
+      pharm_coeff <- (.5*dose[1]*7)/35
 
-	if(day == 1){
-		dose[2] = dose[1]
-		return(dose)
-	} else if(day == 2){
-		dose <- kovacs(INR, dose, day, maxDose = 10)
-		dose[3:4] <- dose[3:4]*pharm_coeff
-		return(dose)
-	} else if(day == 4){
-		dose[3:4] <- dose[3:4]*(1/pharm_coeff)
-		dose <- kovacs(INR, dose, day, maxDose = 10)
-		dose[3:7] <- dose[3:7]*pharm_coeff
-		return(dose)
-	} else if(day >= 7){
-		return(intermt(INR, dose, day, maxDose = 10))
-	} else {
-		stop("Something is wrong in coumagen_pharm...check what you did!")
-	}
-		
-}
+      if(day == 1){
+        dose[2] = dose[1]
+        return(dose)
+      } else if(day == 2){
+        dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+        dose[3:4] <- dose[3:4]*pharm_coeff
+        return(dose)
+      } else if(day == 4){
+        dose[3:4] <- dose[3:4]*(1/pharm_coeff)
+        dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+        dose[3:7] <- dose[3:7]*pharm_coeff
+        return(dose)
+      } else if(day >= 7){
+        return(intermt_protocol(avatar, simulation)(INR, dose, day))
+      } else {
+        stop("Something is wrong in coumagen_pharm...check what you did!")
+      }
+      
+    }
+  }
 
 # Coumagen standard protocol (unlimited days)
 # uses Kovacs for first 6 days
 # After day 7, uses Intermountain to do INR-based adjustment
 
-coumagen_standard <- function(INR, dose, day, maxDose = 10){
-	
-	if(day == 1){
-		dose[2] = dose[1]
-		return(dose)
-	} else if(day == 2){
-		dose <- kovacs(INR, dose, day, maxDose = 10)
-		return(dose)
-	} else if(day == 4){
-		dose <- kovacs(INR, dose, day, maxDose = 10)
-		return(dose)
-	} else if(day >= 7){
-		return(intermt(INR, dose, day, maxDose = 10))
-	} else {
-		stop("Something is wrong in coumagen_standard...check what you did!")
-	}		
+coumagen_standard_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+
+  function(INR, dose, day){
+    
+    if(day == 1){
+      dose[2] = dose[1]
+      return(dose)
+    } else if(day == 2){
+      dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+      return(dose)
+    } else if(day == 4){
+      dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+      return(dose)
+    } else if(day >= 7){
+      return(intermt_protocol(avatar, simulation)(INR, dose, day))
+    } else {
+      stop("Something is wrong in coumagen_standard...check what you did!")
+    }		
+  }
 }
 
 # combined coumagen pharm protocol first 7 days followed by wilson
-wilson_coumagen_pharm <- function(INR, dose, day, maxDose = 10) {
+wilson_coumagen_pharm_protocol = function(avatar, simulation) {
+  function(INR, dose, day) {
     if (day < 7) {
-        return(coumagen_pharm(INR, dose, day, maxDose = 10))
+        return(coumagen_pharm_protocol(avatar, simulation)(INR, dose, day))
     } else {
-        return(wilson(INR, dose, day, maxDose = 10))
+      return(wilson_pharm_protocol(avatar, simulation)(INR, dose, day))
     }
+  }
 }
 
 # combined coumagen standard protocol first 7 days followed by wilson
-wilson_coumagen_standard <- function(INR, dose, day, maxDose = 10) {
+wilson_coumagen_standard_protocol = function(avatar, simulation) { 
+  function(INR, dose, day) {
     if (day < 7) {
-        return(coumagen_standard(INR, dose, day, maxDose = 10))
+        return(coumagen_standard_protocol(avatar,simulation)(INR, dose, day))
     } else {
-        return(wilson(INR, dose, day, maxDose = 10))
+        return(wilson_protocol(avatar,simulation)(INR, dose, day))
     }
 }
 
 # Wilson protocol (unlimited days)
 
-wilson <- function(INR, dose, day, maxDose = 10){
-	maxDays <- length(dose)
+wilson_protocol = function(avatar, simulation) {
+  max_dose = simulation$max_dose
 
-	if(INR <= 1.3){ # Recheck in 5 days -> set 5 doses
-		dose[(day+1):(day+5)] <- min(dose[day]*1.5, maxDose)
-		return(dose[1:maxDays])
-	} else if(INR == 1.4){
-		dose[(day+1):(day+5)] <- min(dose[day]*1.33, maxDose)
-		return(dose[1:maxDays])
-	} else if(INR >= 1.5 & INR <= 1.8){
-		dose[(day+1):(day+5)] <- min(dose[day]*1.25, maxDose)
-		return(dose[1:maxDays])
-	} else if(INR == 1.9){ # Recheck in 7 days
-		dose[(day+1):(day+7)] <- min(dose[day]*1.1, maxDose)
-		return(dose[1:maxDays])
-	} else if(INR >= 2 & INR <= 2.8){ # Recheck in 14 days
-		dose[(day+1):(day+14)] <- dose[day]
-		return(dose[1:maxDays])
-	} else if(INR >= 2.9 & INR <= 3.1){
-		dose[(day+1):min(day+7)] <- dose[day]*0.9
-		return(dose[1:maxDays])
-	} else if(INR >= 3.2 & INR <= 3.5){
-		dose[(day+1):min(day+7)] <- dose[day]*0.75
-		return(dose[1:maxDays])
-	} else if(INR >= 3.6 & INR <= 3.7){
-		dose[(day+1):(day+7)] <- dose[day]*0.67
-		return(dose[1:maxDays])
-	} else if(INR >= 3.8 & INR <= 3.9){ # Hold for 1 day, recheck in 5 days
-		dose[(day+1)] <- 0
-		dose[(day+2):(day+5)] <- dose[day]*0.67
-		return(dose[1:maxDays])
-	} else if(INR >= 4.0 & INR <= 4.4){
-		dose[(day+1)] <- 0
-		dose[(day+2):(day+3)] <- dose[day]*0.67
-		return(dose[1:maxDays])
-	} else if(INR >= 4.5 & INR <= 5.0){
-		dose[(day+1):(day+2)] <- 0
-		dose[(day+3)] <- dose[day]*0.67
-		return(dose[1:maxDays])
-	} else if(INR >= 5.1){ 
-		dose[(day+1):(day+3)] <- 0
-		dose[(day+4)] <- dose[day]*0.5 # added this based on wilson protocol to prevent 0 mg continual doses (VF 01/25/12)
-		return(dose[1:maxDays])
-	} else {
-		stop("Something is wrong...How did you reach here?")
-	}
-	stop("Something is terribly wrong...")
-}
+
+  function(INR, dose, day){
+    maxDays <- length(dose)
+
+    if(INR <= 1.3){ # Recheck in 5 days -> set 5 doses
+      dose[(day+1):(day+5)] <- min(dose[day]*1.5, maxDose)
+      return(dose[1:maxDays])
+    } else if(INR == 1.4){
+      dose[(day+1):(day+5)] <- min(dose[day]*1.33, maxDose)
+      return(dose[1:maxDays])
+    } else if(INR >= 1.5 & INR <= 1.8){
+      dose[(day+1):(day+5)] <- min(dose[day]*1.25, maxDose)
+      return(dose[1:maxDays])
+    } else if(INR == 1.9){ # Recheck in 7 days
+      dose[(day+1):(day+7)] <- min(dose[day]*1.1, maxDose)
+      return(dose[1:maxDays])
+    } else if(INR >= 2 & INR <= 2.8){ # Recheck in 14 days
+      dose[(day+1):(day+14)] <- dose[day]
+      return(dose[1:maxDays])
+    } else if(INR >= 2.9 & INR <= 3.1){
+      dose[(day+1):min(day+7)] <- dose[day]*0.9
+      return(dose[1:maxDays])
+    } else if(INR >= 3.2 & INR <= 3.5){
+      dose[(day+1):min(day+7)] <- dose[day]*0.75
+      return(dose[1:maxDays])
+    } else if(INR >= 3.6 & INR <= 3.7){
+      dose[(day+1):(day+7)] <- dose[day]*0.67
+      return(dose[1:maxDays])
+    } else if(INR >= 3.8 & INR <= 3.9){ # Hold for 1 day, recheck in 5 days
+      dose[(day+1)] <- 0
+      dose[(day+2):(day+5)] <- dose[day]*0.67
+      return(dose[1:maxDays])
+    } else if(INR >= 4.0 & INR <= 4.4){
+      dose[(day+1)] <- 0
+      dose[(day+2):(day+3)] <- dose[day]*0.67
+      return(dose[1:maxDays])
+    } else if(INR >= 4.5 & INR <= 5.0){
+      dose[(day+1):(day+2)] <- 0
+      dose[(day+3)] <- dose[day]*0.67
+      return(dose[1:maxDays])
+    } else if(INR >= 5.1){ 
+      dose[(day+1):(day+3)] <- 0
+      dose[(day+4)] <- dose[day]*0.5 # added this based on wilson protocol to prevent 0 mg continual doses (VF 01/25/12)
+      return(dose[1:maxDays])
+    } else {
+      stop("Something is wrong...How did you reach here?")
+    }
+    stop("Something is terribly wrong...")
+    }
+  }
 
 # Fennerty protocol (4 days)
 
@@ -506,24 +528,28 @@ fen <- list("1" = list("<1.4" = 10),
 		           ">4.5" = c(0,0,1)))
 
 
-fennerty <- function(INR, dose, day, maxDose = 10){
+fennerty_protocol =
+  function(avatar, simulation) {
+  
+    function(INR, dose, day) {
 
-    if (day <= 4) {
-    	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4.5, ">4.5", as.character(INR)))
-    	day_str <- as.character(day)
-	
-    	if(is.null(fen[[day_str]][[INR_str]])){
-    		dose[(day+1)] <- dose[day]
-    		return(dose)
-    	}
+      if (day <= 4) {
+        INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4.5, ">4.5", as.character(INR)))
+        day_str <- as.character(day)
+    
+        if(is.null(fen[[day_str]][[INR_str]])){
+          dose[(day+1)] <- dose[day]
+          return(dose)
+        }
 
-    	dose[(day+(1:length(fen[[day_str]][[INR_str]])))] <- fen[[day_str]][[INR_str]]
-    	return(dose)
-    } else {
+        dose[(day+(1:length(fen[[day_str]][[INR_str]])))] <- fen[[day_str]][[INR_str]]
+        return(dose)
+      } else {
         dose[(day+1)] = dose[day]
         return(dose)
-    }    
-}
+      }    
+    }
+  }
 
 # Cooper protocol (modified Fennerty; 4 days)
 
@@ -618,26 +644,32 @@ coop <- list("1" = list("<1.4" = 10),
 		           "4" = 3,
 		           ">4" = 0))
 
-cooper <- function(INR, dose, day, maxDose = 10){
+cooper_protocol =
+  function(avatar, simulation) {
 
-	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
-	day_str <- as.character(day)
+    maxDose = simulation$max_dose
 
-	if(day > 4 & INR > 3){
-		dose[(day+1)] <- 0
-		return(dose)
-	} else if(day > 4 & INR < 3){
-		dose[(day+1)] <- dose[day]
-		if (dose[day] == 0) {
-		    dose[(day+1)] = 5   # hack - give "average dose" b/c cooper doesn't say what to do hotshot.
-		    cat("Cooper here - what the hell are you guys doing to my protocol?\n")
-	    }
-	    return(dose)
-	}
-	dose[(day+1)] <- ifelse(is.null(coop[[day_str]][[INR_str]]), dose[day], coop[[day_str]][[INR_str]])
-	return(dose)
+    function(INR, dose, day){
 
-}
+      INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
+      day_str <- as.character(day)
+
+      if(day > 4 & INR > 3){
+        dose[(day+1)] <- 0
+        return(dose)
+      } else if(day > 4 & INR < 3){
+        dose[(day+1)] <- dose[day]
+        if (dose[day] == 0) {
+            dose[(day+1)] = 5   # hack - give "average dose" b/c cooper doesn't say what to do hotshot.
+            cat("Cooper here - what the hell are you guys doing to my protocol?\n")
+          }
+          return(dose)
+      }
+      dose[(day+1)] <- ifelse(is.null(coop[[day_str]][[INR_str]]), dose[day], coop[[day_str]][[INR_str]])
+      return(dose)
+
+    }
+  }
 
 # Gedge protocol (modified Fennerty; 4 days)
 
@@ -732,19 +764,23 @@ ged <- list("1" = list("<1.4" = 10),
 		         "4" = 0,
 		         ">4" = 0))
 
-gedge <- function(INR, dose, day, maxDose = 10){
+gedge_protocol = function(avatar, simulation) {
+  
+  maxDose = simulation $ maxDose
+
+  function(INR, dose, day){
 
     if (day <= 4) {
-    	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
-    	day_str <- as.character(day)
+      INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
+      day_str <- as.character(day)
 
-    	dose[(day+1)] <- ifelse(is.null(ged[[day_str]][[INR_str]]), dose[day], ged[[day_str]][[INR_str]])
-    	return(dose)
-	} else {
-	    dose[(day+1)] = dose[day]
-	    return(dose)
-	}
-
+      dose[(day+1)] <- ifelse(is.null(ged[[day_str]][[INR_str]]), dose[day], ged[[day_str]][[INR_str]])
+      return(dose)
+    } else {
+      dose[(day+1)] = dose[day]
+      return(dose)
+    }
+  }
 }
 
 # Roberts protocol (4 days)
@@ -993,71 +1029,84 @@ rob4 <- list("<=1.5" = list("<=50" = 10,
 
 # This protocol also uses the avatar's age
 
-roberts <- function(INR, dose, day, age, maxDose = 10){
-	age_str <- ifelse(age <= 50, "<=50", ifelse((age > 50 & age <=65), "51-65", ifelse((age > 65 & age <= 80), "66-80", ">80")))
+roberts_protocol = function(avatar, simulation) {
+  age = avatar$age
+  maxDose= simulation$max_dose
+  function(INR, dose, day){
+    age_str <- ifelse(age <= 50, "<=50", ifelse((age > 50 & age <=65), "51-65", ifelse((age > 65 & age <= 80), "66-80", ">80")))
 
-	if(day == 1){
-		INR_str <- ifelse(INR < 1.4, "<1.4", as.character(INR))
-		dose[(day+1)] <- ifelse(is.null(rob1[[INR_str]][[age_str]]), dose[day], rob1[[INR_str]][[age_str]])
-		return(dose)
-	} else if(day == 2){
-		INR_str <- ifelse(INR <= 1.5, "<=1.5", ">=1.6")
-		dose[(day+1)] <- rob2[[INR_str]][[age_str]]
-		return(dose)
-	} else if(day == 3){
-		INR_str <- ifelse(INR <= 1.7, "<=1.7", ifelse(INR > 4, ">4", as.character(INR)))
-		dose[(day+1)] <- rob3[[INR_str]][[age_str]]
-		return(dose)
-	} else if(day == 4){
-		INR_str <- ifelse(INR <= 1.5, "<=1.5", ifelse(INR > 4.5, ">4.5", as.character(INR)))
-		dose[(day+(1:length(rob4[[INR_str]][[age_str]])))] <- rob4[[INR_str]][[age_str]]
-		return(dose)
-	} else {
-		dose[(day+1)] = dose[day]
-		return(dose)
-	}
-	
+    if(day == 1){
+      INR_str <- ifelse(INR < 1.4, "<1.4", as.character(INR))
+      dose[(day+1)] <- ifelse(is.null(rob1[[INR_str]][[age_str]]), dose[day], rob1[[INR_str]][[age_str]])
+      return(dose)
+    } else if(day == 2){
+      INR_str <- ifelse(INR <= 1.5, "<=1.5", ">=1.6")
+      dose[(day+1)] <- rob2[[INR_str]][[age_str]]
+      return(dose)
+    } else if(day == 3){
+      INR_str <- ifelse(INR <= 1.7, "<=1.7", ifelse(INR > 4, ">4", as.character(INR)))
+      dose[(day+1)] <- rob3[[INR_str]][[age_str]]
+      return(dose)
+    } else if(day == 4){
+      INR_str <- ifelse(INR <= 1.5, "<=1.5", ifelse(INR > 4.5, ">4.5", as.character(INR)))
+      dose[(day+(1:length(rob4[[INR_str]][[age_str]])))] <- rob4[[INR_str]][[age_str]]
+      return(dose)
+    } else {
+      dose[(day+1)] = dose[day]
+      return(dose)
+    }
+    
+  }
 }
 # fixed dose protocol - the dose is constant the entire time and ignores INR
-fixed_dose = function(dose, day) {
-    maxDays = length(dose)
-    # check on days 1, 2, 3, 7, every 7, then 14 
-    if (day == 1 | day == 2) {
-        dose[day+1] = dose[day]
-    } else if (day == 3) {
-        dose[(day+1):7] = rep(dose[day], (7-day))
-    } else if (day == 7) {
-        dose[(day+1):14] = rep(dose[day], (14-day))
-    } else if (day >= 14) {
-        dose[(day+1):(day+14)] = rep(dose[day], 14)
-    } else {
-        stop("Somthing is horribly wrong with the fixed_dose protocol")
+fixed_dose_protocol = 
+  function(avatar, simulation) {
+    function(INR, dose, day) {
+
+      maxDays = length(dose)
+      # check on days 1, 2, 3, 7, every 7, then 14 
+      if (day == 1 | day == 2) {
+          dose[day+1] = dose[day]
+      } else if (day == 3) {
+          dose[(day+1):7] = rep(dose[day], (7-day))
+      } else if (day == 7) {
+          dose[(day+1):14] = rep(dose[day], (14-day))
+      } else if (day >= 14) {
+          dose[(day+1):(day+14)] = rep(dose[day], 14)
+      } else {
+          stop("Somthing is horribly wrong with the fixed_dose protocol")
+      }
+      return(dose[1:maxDays])
     }
-    return(dose[1:maxDays])
-}
+  }
 # random protocol based off "know_your_patient"
 # this protocol will ignore the INR value and provide a random dose according to the days specified
 # sets the random seed based on the system time.  Otherwise, it will use the rseed value from the INR function and it
 # will be the same number every time.  It's too fast for the time so you can still get the same seed hence divide by day.
 # Apparently, the set.seed works globablly 
-know_your_patient_random = function(INR, dose, day, rseed, maxDose = 12.5) {
-    set.seed(rseed)
-    possibleDoses = seq(0, maxDose, 2.5)
-    maxDays = length(dose)
-    # check on days 1, 2, 3, 7, every 7, then 14 
-    if (day == 1 | day == 2) {
-        dose[day+1] = sample(possibleDoses, 1)
-    } else if (day == 3) {
-        dose[(day+1):7] = rep(sample(possibleDoses, 1), (7-day))
-    } else if (day == 7) {
-        dose[(day+1):14] = rep(sample(possibleDoses, 1), (14-day))
-    } else if (day >= 14) {
-        dose[(day+1):(day+14)] = rep(sample(possibleDoses, 1), 14)
-    } else {
-        stop("Somthing is horribly wrong with the know_your_patient_random protocol")
+know_your_patient_random_protocol = 
+  function(avatar, simulation) {
+    rseed = simulation$rseed
+    maxDose = simulation$max_dose
+
+    function(INR, dose, day) {
+        possibleDoses = seq(0, maxDose, 2.5)
+        maxDays = length(dose)
+        # check on days 1, 2, 3, 7, every 7, then 14 
+        if (day == 1 | day == 2) {
+            dose[day+1] = sample(possibleDoses, 1)
+        } else if (day == 3) {
+            dose[(day+1):7] = rep(sample(possibleDoses, 1), (7-day))
+        } else if (day == 7) {
+            dose[(day+1):14] = rep(sample(possibleDoses, 1), (14-day))
+        } else if (day >= 14) {
+            dose[(day+1):(day+14)] = rep(sample(possibleDoses, 1), 14)
+        } else {
+            stop("Somthing is horribly wrong with the know_your_patient_random protocol")
+        }
+        return(dose[1:maxDays])
     }
-    return(dose[1:maxDays])
-}
+  }
 
 # based on the nomogram from the BWH warfarin clinic - it's very vague so we made some assumptions and guesses
 # in the clinic they start everyone at 5 mg and adjust in 2.5 mg increments
@@ -1066,41 +1115,46 @@ know_your_patient_random = function(INR, dose, day, rseed, maxDose = 12.5) {
 # will be the same number every time.  It's too fast for the time so you can still get the same seed hence divide by day.
 # Apparently, the set.seed works globablly.
 # for day 28 and beyond we check if the previous 14 doses are equal to the current dose and if the INR is in range to indicate stability
-know_your_patient = function(INR, dose, day, rseed, maxDose = 12.5) {
-    set.seed(rseed)
-    possibleDoses = seq(0, maxDose, 2.5)
-    maxDays = length(dose)
-    # check on days 1, 2, 3, 7, every 7, then 14 
-    
-    if (day == 1 | day == 2) {
-        dose[day+1] = know_your_patient23(INR, dose, day, possibleDoses, 1)
-    } else if (day == 3) {
-        dose[(day+1):7] = know_your_patient23(INR, dose, day, possibleDoses, (7-day))
-    } else if (day == 7) {
-        dose[(day+1):14] = know_your_patient23(INR, dose, day, possibleDoses, (14-day))
-    } else if (day >= 14 & day < 28) {
-        if (INR < 2.0) {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
-        } else if (INR >= 2.0 & INR <= 3.0) {
-            dose[(day+1):(day+14)] = know_your_patient23(INR, dose, day, possibleDoses, 14) 
-        } else {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
-        }
-    } else if (day >= 28) {
-        if (INR < 2.0) {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
-        } else if (INR >= 2.0 & INR <= 3.0 & dose[day] == mean(dose[(day-14):day])) {
-            dose[(day+1):(day+30)] = know_your_patient23(INR, dose, day, possibleDoses, 30) 
-        } else {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
-        }
-    } 
-    else {
-        stop("Somthing is horribly wrong with the know_your_patient protocol")
-    }
-    return(dose[1:maxDays])
-}
+know_your_patient_protocol = 
+  function(avatar = NA, simulation = NA) {
+    rseed = simulation$rseed
 
+    function(INR, dose, day) {
+        set.seed(rseed)
+        possibleDoses = seq(0, maxDose, 2.5)
+        maxDays = length(dose)
+        # check on days 1, 2, 3, 7, every 7, then 14 
+        
+        if (day == 1 | day == 2) {
+            dose[day+1] = know_your_patient23(INR, dose, day, possibleDoses, 1)
+        } else if (day == 3) {
+            dose[(day+1):7] = know_your_patient23(INR, dose, day, possibleDoses, (7-day))
+        } else if (day == 7) {
+            dose[(day+1):14] = know_your_patient23(INR, dose, day, possibleDoses, (14-day))
+        } else if (day >= 14 & day < 28) {
+            if (INR < 2.0) {
+                dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            } else if (INR >= 2.0 & INR <= 3.0) {
+                dose[(day+1):(day+14)] = know_your_patient23(INR, dose, day, possibleDoses, 14) 
+            } else {
+                dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            }
+        } else if (day >= 28) {
+            if (INR < 2.0) {
+                dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            } else if (INR >= 2.0 & INR <= 3.0 & dose[day] == mean(dose[(day-14):day])) {
+                dose[(day+1):(day+30)] = know_your_patient23(INR, dose, day, possibleDoses, 30) 
+            } else {
+                dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            }
+        } 
+        else {
+            stop("Somthing is horribly wrong with the know_your_patient protocol")
+        }
+        return(dose[1:maxDays])
+    }
+  }
+  
 know_your_patient23 = function(INR, dose, day, possibleDoses, numDoses) {
     if (INR < 2.0) {
         tmpDoses = possibleDoses[possibleDoses >= dose[day]]
@@ -1141,24 +1195,28 @@ know_your_patient23 = function(INR, dose, day, possibleDoses, numDoses) {
 # adjusts the dose by X% (not based on any protocol)
 # Not updated and assumedly unused
 
-adjustDoseByPercent = function(INR, percent = 0.10, maxDose = 10) {
-    if (!is.nan(INR)) {
-         
-        # adjusting dose by X% - most simplistic case
-        if (INR < 2) {
-            dose = dose * (1 + percent)
-        }
-        else if (INR > 3) {
-            dose = dose * (1 - percent)
-        } 
-        else {
-            dose = dose # do nothing  
-        }
-        
-        # the max dose
-        if (dose > maxDose) {
-            dose = maxDose
-        }
-    }
-    return(dose)
-}
+# adjust_dose_by_percent_protocol =
+#  function(avatar = NA, simulation = NA) {
+#
+#    function(INR, percent = 0.10, maxDose = 10) {
+#      if (!is.nan(INR)) {
+#           
+#          # adjusting dose by X% - most simplistic case
+#          if (INR < 2) {
+#              dose = dose * (1 + percent)
+#          }
+#          else if (INR > 3) {
+#              dose = dose * (1 - percent)
+#          } 
+#          else {
+#              dose = dose # do nothing  
+#          }
+#          
+#          # the max dose
+#          if (dose > maxDose) {
+#              dose = maxDose
+#          }
+#      }
+#      return(dose)
+#  }
+# }
