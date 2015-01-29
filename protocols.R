@@ -290,31 +290,31 @@ intermt_protocol = function(avatar, simulation) {
 # After day 7, uses Intermountain to do INR-based adjustment
 
 coumagen_pharm_protocol = function(avatar, simulation) {
-    maxDose = simulation$max_dose
-    function(INR, dose, day){
-      
-      pharm_coeff <- (.5*dose[1]*7)/35
+  maxDose = simulation$max_dose
+  function(INR, dose, day){
+    
+    pharm_coeff <- (.5*dose[1]*7)/35
 
-      if(day == 1){
-        dose[2] = dose[1]
-        return(dose)
-      } else if(day == 2){
-        dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
-        dose[3:4] <- dose[3:4]*pharm_coeff
-        return(dose)
-      } else if(day == 4){
-        dose[3:4] <- dose[3:4]*(1/pharm_coeff)
-        dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
-        dose[3:7] <- dose[3:7]*pharm_coeff
-        return(dose)
-      } else if(day >= 7){
-        return(intermt_protocol(avatar, simulation)(INR, dose, day))
-      } else {
+    if(day == 1){
+      dose[2] = dose[1]
+      return(dose)
+    } else if(day == 2){
+      dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+      dose[3:4] <- dose[3:4]*pharm_coeff
+      return(dose)
+    } else if(day == 4){
+      dose[3:4] <- dose[3:4]*(1/pharm_coeff)
+      dose <- kovacs_protocol(avatar, simulation)(INR, dose, day)
+      dose[3:7] <- dose[3:7]*pharm_coeff
+      return(dose)
+    } else if(day >= 7){
+      return(intermt_protocol(avatar, simulation)(INR, dose, day))
+    } else {
         stop("Something is wrong in coumagen_pharm...check what you did!")
-      }
-      
     }
+      
   }
+}
 
 # Coumagen standard protocol (unlimited days)
 # uses Kovacs for first 6 days
@@ -361,6 +361,7 @@ wilson_coumagen_standard_protocol = function(avatar, simulation) {
     } else {
         return(wilson_protocol(avatar,simulation)(INR, dose, day))
     }
+  }
 }
 
 # Wilson protocol (unlimited days)

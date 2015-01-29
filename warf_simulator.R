@@ -41,6 +41,7 @@ processAvatars = function(avatars, protocol,
       inr_errors = rnorm(num_days_to_simulate, 0, 0.1)
 
       for(day in 1:num_days_to_simulate) {
+        print("day")
         pill = dose_cat(dose[day], max_dose)
         test_patient = hamberg_2007( pill
                                    , Cs_super
@@ -69,7 +70,7 @@ processAvatars = function(avatars, protocol,
 
           if(is.na(dose[min(day+1, num_days_to_simulate)])) {
             inr_check[day] = day
-            dose = protocol(measured_inr, dose, day, max_dose)
+            dose = protocol(measured_inr, dose, day)
           }
         }
       }
@@ -82,4 +83,4 @@ processAvatars = function(avatars, protocol,
 
 avatars <- read.table("data_semifinal.txt", sep=" ", header=T)
 
-out = processAvatars(avatars[1:3,], coumagen_pharm, "pginitial_couma1", 50, 15, 2, 24, 4321)
+processAvatars(avatars[1:3,], coumagen_pharm_protocol(NA, list(max_dose=10)), "pginitial_couma1", 50, 15, 2, 24, 4321)
