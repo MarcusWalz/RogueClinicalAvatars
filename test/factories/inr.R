@@ -53,4 +53,4 @@ inr_mean = function(inr_functions) {
 }
 
 test_simulation = list(days = 100) 
-inr_bad = inr_smooth(c(inr_linear(5,2), inr_spike(), inr_noise()))
+inr_bad = inr_add(c(inr_linear(5,2), inr_spike(), inr_noise()))
