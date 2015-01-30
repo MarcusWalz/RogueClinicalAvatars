@@ -17,6 +17,7 @@
 # 1 The dose (unchanged for 6 days) that yielded an INR within 0.5 of the
 # target INR.
 stable_def_1 = function (avatar, simulation_results) { 
+  
 
 }
 

@@ -1,7 +1,5 @@
 source("../../protocols.R")
-
 source("avatar.R")
-
 source("simulation.R")
 source("inr.R")
 source("dose.R")

@@ -4,6 +4,12 @@ inr_constant = function(inr = 3.5) {
   }
 }
 
+inr_target = function() {
+  function(avatar, simulation) {
+    inr_contant(avatar$TINR)(avatar, simulation)
+  } 
+}
+
 inr_linear = function(inr_start = 5, inr_end = 3.5) {
   function(avatar, simulation) {
     slope = (inr_end - inr_start) / simulation$days
