@@ -33,19 +33,18 @@ YesNoFactor = as.factor(c("Y", "N"))
 
 avatars_valid = function(avatars) {
   
-  tryCatch({(
-     avatars$RACE    %in% RACE
-  && avatars$VKORC1G %in% VKORC1G
-  && avatars$VKORC1T %in% VKORC1T
-  && avatars$CYP2C9  %in% CYP2C9
-  && avatars$GENDER  %in% GENDER
-  && avatars$ENZ     %in% YesNoFactor
-  && avatars$Smoker  %in% YesNoFactor
-  && avatars$DVT     %in% YesNoFactor
-  && avatars$AMI     %in% YesNoFactor
-  && is.numeric(avatars$AGE)
-  && is.numeric(avatars$HEIGHT)
-  && is.numeric(avatars$WEIGHT)
-  && is.numeric(avatars$TINR)
-  )}, error = function (x) FALSE ) 
+  ( avatars$RACE    %in% RACE 
+  * avatars$VKORC1G %in% VKORC1G
+  * avatars$VKORC1T %in% VKORC1T
+  * avatars$CYP2C9  %in% CYP2C9
+  * avatars$GENDER  %in% GENDER
+  * avatars$ENZ     %in% YesNoFactor
+  * avatars$SMOKER  %in% YesNoFactor
+  * avatars$DVT     %in% YesNoFactor
+  * avatars$AMI     %in% YesNoFactor
+  * sapply(avatars$AGE, is.numeric)
+  * sapply(avatars$WEIGHT, is.numeric)
+  * sapply(avatars$HEIGHT, is.numeric)
+  * sapply(avatars$TINR, is.numeric)
+  ) == 1
 }

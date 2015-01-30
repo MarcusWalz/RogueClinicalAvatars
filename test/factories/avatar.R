@@ -1,26 +1,31 @@
+source("../../data/avatar.R")
 
 # Generates a random avatar. Nothing Fancy goes on to make the avatar realistic.
 # E.g. BMI is completly independent of height and weight.
-avatar_random = function () {
-  list (
-    "AGE"    = rnorm(1,50,10)
-  , "AMI" = sample(c("Y", "N"), 1)
-  , "CYP2C9" = sample(c("*1/*1", "*1/*2", "*1/*3", "*2/*1","*2/*2", "*2/*3", "*3/*3"), 1)
-  , "DVT" = sample(c("Y", "N"), 1)
-  , "ENZYME" = sample(c("Y", "N"), 1)
-  , "GENDER" = sample(c("M", "F"), 1)
-  , "HEIGHT" = rnorm(1,62,10)
-  , "RACE"   = sample(c("White", "Black or African American", "Asian", "Unknown"), 1) 
-  , "SMOKER" = sample(c("Y", "N"), 1)
-  , "TINR" = rnorm(1, 2.7, 0.3)
-  , "VKORC1G" = sample(c("G/G", "A/A", "G/A", "Unknown"), 1)
-  , "VKORC1T" = sample(c("C/C", "C/T", "T/T", "Unknown"), 1)
-  , "WEIGHT" = rnorm(1,180,20)
+avatars_random = function (n = 1) {
+  # over ride the sample function
+  sample_ <- function(fact, n)  sample(fact, n, replace=T)
+  as.data.frame(
+    list (
+      "AGE"    = rnorm(n,50,10)
+    , "AMI" = sample_(YesNoFactor, n)
+    , "CYP2C9" = sample_(CYP2C9, n)
+    , "DVT" = sample_(YesNoFactor, n)
+    , "ENZYME" = sample_(YesNoFactor, n)
+    , "GENDER" = sample_(GENDER, n)
+    , "HEIGHT" = rnorm(n,62,10)
+    , "RACE"   = sample_(RACE, n) 
+    , "SMOKER" = sample_(YesNoFactor, n)
+    , "TINR" = rnorm(n, 2.7, 0.3)
+    , "VKORC1G" = sample_(VKORC1G, n)
+    , "VKORC1T" = sample_(VKORC1T, n)
+    , "WEIGHT" = rnorm(n,180,20)
+    )
   )
 
 }
 
 # Grabs a random avatar from a dataframe
-avatar_random_from_table = function(avatars) {
-  avatars[sample(nrow(avatar),1), ]
+  avatar_random_from_table = function(n =1, avatars) {
+  avatars[sample(nrow(avatar),n), ]
 }
