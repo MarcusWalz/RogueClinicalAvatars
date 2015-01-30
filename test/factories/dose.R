@@ -28,9 +28,6 @@ dose_spike = function(dose_diff = 1.5, start = NA, length = NA) {
 
 dose_add = function(dose_functions) {
   function(avatar, simulation) {
-    if(!is.vector(dose_functions)) {
-      dose_functions <- c(dose_functions)
-    }
     rowSums(
       sapply(dose_functions, function(dose) dose(avatar, simulation))
     )

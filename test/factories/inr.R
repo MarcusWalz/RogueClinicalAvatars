@@ -40,9 +40,6 @@ inr_smooth = function(inr_functions) {
 
 inr_add = function(inr_functions) {
   function(avatar, simulation) {
-    if(!is.vector(inr_functions)) {
-      inr_functions <- c(inr_functions)
-    }
     rowSums(
       sapply(inr_functions, function(inr) inr(avatar, simulation))
     )
