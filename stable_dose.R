@@ -1,5 +1,4 @@
 
-getStableDefinition = function (group_number) {
   
 # 
 # ARGS:
@@ -17,8 +16,8 @@ getStableDefinition = function (group_number) {
 
 # 1 The dose (unchanged for 6 days) that yielded an INR within 0.5 of the
 # target INR.
-stable_def_1 = function (avatar, inr, dose, check) { 
-  FALSE #TODO
+stable_def_1 = function (avatar, simulation_results) { 
+
 }
 
 # 2 Average weekly dose (irrespective of achieved INR) that the patient received
@@ -126,7 +125,7 @@ stable_def_16 = function (avatar, inr, dose, check) {
   FALSE #TODO
 }
 
-#￼17 The dose of warfarin that led to an INR in the target range (2-3 for
+# 17 The dose of warfarin that led to an INR in the target range (2-3 for
 #all indications except valve prosthesis; for valve prosthesis the range is
 #2.5 - 3.5) on 3 consecutive measurements.
 stable_def_17 = function (avatar, inr, dose, check) { 
@@ -160,6 +159,8 @@ stable_def_20 = function (avatar, inr, dose, check) {
 stable_def_21 = function (avatar, inr, dose, check) { 
   FALSE #TODO
 }
+
+getStableDefinition = function (group_number) {
 
   get(paste("stable_def_", as.character(group_number), sep = ""))
 
