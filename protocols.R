@@ -1221,3 +1221,13 @@ know_your_patient23 = function(INR, dose, day, possibleDoses, numDoses) {
 #      return(dose)
 #  }
 # }
+
+
+# factor containing names of all protocols
+protocols = as.factor(gsub("_protocol", "", ls()[grep("*_protocol", ls())]))
+
+# Grab a protocol based on a string 
+fetch_protocol = function(protocol_name) { 
+  get(paste(protocol_name, "_protocol", sep=""))
+}
+
