@@ -1,4 +1,6 @@
 source("../../protocols.R")
+source("../../stable_dose.R")
+
 source("avatar.R")
 source("simulation.R")
 source("inr.R")
@@ -14,9 +16,9 @@ run_simulation =
            , check = check_every_n_days(7)
            ) 
 {
-  list( "avatar"      = avatar
-      , "sim"         = simulation
-      , "sim_result"  =
+  list( "avatar"  = avatar
+      , "sim"     = simulation
+      , "sim_out" =
         as.data.frame(
           list ( "INR"    = inr   (avatar, simulation)
                , "Dose"   = dose  (avatar, simulation)
@@ -26,4 +28,18 @@ run_simulation =
       )
 }
 
-run_simulation()
+x = run_simulation()
+x$sim_out
+
+combine_functions2( group_by_dose()
+                  , group_by_inr_stability(2,3)
+                  )(x$sim_out)
+
+
+
+# exe( c( group_by_inr_stability(2,3)
+#      , remove_unstable_inr(2,3)
+#      , filter_by_days_elapsed(2)
+#      )
+#   , x$sim_out
+#   )

@@ -6,7 +6,7 @@ inr_constant = function(inr = 3.5) {
 
 inr_target = function() {
   function(avatar, simulation) {
-    inr_contant(avatar$TINR)(avatar, simulation)
+    inr_constant(avatar$TINR)(avatar, simulation)
   } 
 }
 
