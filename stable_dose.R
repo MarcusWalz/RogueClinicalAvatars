@@ -91,8 +91,17 @@ streak2 = function(data, f) {
 # frames is hard. Adding a single data frame to a list creates a list of columns
 # in the data frame. Even scarier stuff happens if I try to use vectors.
 # 
+# Luckily the solution is simple (although I don't quite understand it). Basically
+# we need to append to lists like this:
+# 
+#   append(list, list(new_element))
+# 
+# and then everything works as expected. 
+# 
 # The last step would be using a sort of "choice" function
 # that picks out the best data frame to grab the dose quatitiy. 
+
+
 
 combine_functions2 = function(f,g) {
   function(sim_out) {
@@ -102,20 +111,18 @@ combine_functions2 = function(f,g) {
     #this can probably be done using lapply
     for(result in results) {
       print("f output")
-      print(result)
-      print("sending to g")
       results2 = g(result)
       
       for(result2 in results2) {
         print("g output")
-        print(result2)
-        print("g done")
         output=append(output, list(result2))
       }
     }
     return(output)
   }
 }
+
+combine_f = function(combs) { function(sim_out) { Reduce(combine_functions2, combs, right=T)(sim_out) } }
 
 # just for test
 id = function() {function(sim_out) { list(sim_out) }}
