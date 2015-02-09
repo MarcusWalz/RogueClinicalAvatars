@@ -111,11 +111,15 @@ combine_functions2 = function(f,g) {
     #this can probably be done using lapply
     for(result in results) {
       print("f output")
-      results2 = g(result)
+      if(nrow(result) > 0) {
+        results2 = g(result)
       
-      for(result2 in results2) {
-        print("g output")
-        output=append(output, list(result2))
+        for(result2 in results2) {
+          if(nrow(result2) > 0) {
+            print("g output")
+            output=append(output, list(result2))
+          }
+        }
       }
     }
     return(output)
@@ -209,47 +213,26 @@ exe = function(combinators, sim_out) {
 
 
 
-# test 
-# id = function(x) x 
-# streak(TRUE, id) == 1 
-# streak(c(TRUE,FALSE), id) == 1
-# streak(c(TRUE,TRUE), id) == 2
-# streak(c(TRUE,TRUE,TRUE,FALSE,TRUE), id) == 3
-# streak(c(FALSE, FALSE, TRUE, TRUE, FALSE), id) == 2
-
-
 # Definition of Stable Dose of Warfarin for Each Research Group
 
 # 1 The dose (unchanged for 6 days) that yielded an INR within 0.5 of the
 # target INR.
 stable_def_1 = function (simulation) { 
+  inr_low  = simutation$avatar$tinr - 0.5
+  inr_high = simutation$avatar$tinr + 0.5
 
-  # NOT RIGHT BUT IT'S A START
-  s_dose = streak2(simulation$sim_out, function(last_dose, sim_out) {
-    if(findInterval(sim_out$INR, c(simulation$avatar$TINR - 0.5, simulation$avatar$TINR + 0.5)) == 1) {
-      # last dose does not exist  
-      if(is.na(last_dose)) {
-        list("step"="continue", "out"=sim_out$Dose)
-      # current dose matches last dose
-      } else if(sim_out$Dose == last_dose) {
-        list("step"="continue", "out"=sim_out$Dose)
-      # in range, but dose changed
-      } else {
-        list("step"="reset", "out"=sim_out$Dose)
-      }
-    } else {
-# out of range
-      list("step"="stop", "out"=NA)
-    }
-
-  })
-
-  if(nrow(s_dose) < 6) {
+  out =
+  combine_functions_2( group_by_dose()
+   , combine_functions2(group_by_inr_stability(inr_low, inr_high)
+      , combine_functions2(filter_unstable_inr(inr_low, inr_high), filter_by_days_elapsed(6)
+                          )
+                        )
+                      )(simulation$sim_out)
+  if(length(out) == 0) {
     return(NA)
   }
 
-  s_dose$Dose[1]
-                                  
+  tail(out)$INR[0]
 }
 
 
