@@ -122,12 +122,16 @@ combine_functions2 = function(f,g) {
   }
 }
 
-combine_f = function(combs) { function(sim_out) { Reduce(combine_functions2, combs, right=T)(sim_out) } }
+combine_f = function(combs) { function(sim_out) {
+  Reduce(function(a,b) { combine_functions2(a,b) }, combs, right=F)
+  (sim_out) } }
 
 # just for test
 id = function() {function(sim_out) { list(sim_out) }}
 
 group_by_dose = function() { function(sim_out) {
+  if(nrow(sim_out) == 1) { return(list(sim_out)) } 
+
   last_dose = sim_out$Dose[1]
 
   frames = list()
@@ -148,9 +152,11 @@ group_by_dose = function() { function(sim_out) {
 }}
 
 group_by_inr_stability = function(min, max) {
+
   is_stable = function(x) { x >= min && x <= max }
 
   function(sim_out) {
+    if(nrow(sim_out) == 1) { return(list(sim_out)) } 
 
     stable = is_stable(sim_out$INR[1])
 

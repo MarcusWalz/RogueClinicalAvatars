@@ -1,16 +1,39 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 import Data.Monoid 
 import Data.List (zip4)
+import System.Random
 
 data Race = Asian | Black | White
   deriving(Show, Eq)
 
 data VKORC1G = AA | AG | GG
-  deriving(Show, Eq)
+  deriving(Eq)
+
+instance Show VKORC1G where
+  show AA = "A/A"
+  show AG = "A/G"
+  show GG = "G/G"
+
 data VKORC1T = CC | CT | TT
-  deriving(Show, Eq)
+  deriving(Eq)
+  
+instance Show VKORC1T where
+  show CC = "C/C"
+  show CT = "C/T"
+  show TT = "T/T"
 
 data CYP2C9 = OneOne | OneTwo | OneThree | TwoOne | TwoTwo | TwoThree | ThreeThree
-  deriving(Show, Eq)
+  deriving(Eq)
+
+instance Show CYP2C9 where
+  show OneOne     = "*1/*1"
+  show OneTwo     = "*1/*2"
+  show OneThree   = "*1/*3"
+  show TwoOne     = "*2/*1"
+  show TwoTwo     = "*2/*2"
+  show TwoThree   = "*2/*3"
+  show ThreeThree = "*3/*3"
 
 data Gender = Male | Female 
   deriving(Show, Eq)
@@ -23,7 +46,7 @@ data Avatar = Avatar
   , vkorc1g   :: Maybe VKORC1G
   , vkorc1t   :: Maybe VKORC1T
   , cyp2c9    :: Maybe CYP2C9
-  , gender    :: Gender
+  , gender    :: Maybe Gender
   , enzyme    :: Bool
   , smoker    :: Bool
   , dvt       :: Bool
@@ -33,6 +56,9 @@ data Avatar = Avatar
   , weight    :: Double
   , tinr      :: INR
   } deriving(Show, Eq)
+
+sampleAvatar = Avatar (Just White) (Just AA) (Just CC) (Just OneOne) (Just Male)
+  False False False False 40 121 31 3.4
 
 data Sim = Sim 
   { days :: Int
@@ -45,12 +71,31 @@ data SimDay = SimDay
   , check :: Bool 
   } deriving(Show, Eq)
 
-
-
 type SimOut = [SimDay]
+
 
 arrayToSimOut :: [INR] -> [Dose] -> [Bool] -> SimOut
 arrayToSimOut inr dose check = map (\(a,b,c,d)->SimDay a b c d) $ zip4 [1..] inr dose check
+
+newtype Sim_Factory g a = Sim_Factory (g -> Avatar -> Sim -> [a])
+
+instance Num a => Monoid (Sim_Factory g a) where
+  mempty  = Sim_Factory $ \gen av sim -> replicate (days sim) 0
+  mappend (Sim_Factory f) (Sim_Factory g) =
+    Sim_Factory $ \gen av sim -> zipWith (+) (f gen av sim) (g gen av sim) 
+
+instance Monoid (Sim_Factory g Bool) where   
+  mempty  = Sim_Factory $ \gen av sim -> replicate (days sim) False
+  mappend (Sim_Factory f) (Sim_Factory g) =
+    Sim_Factory $ \gen av sim -> zipWith (||) (f gen av sim) (g gen av sim) 
+    
+inr_constant :: INR -> Sim_Factory g INR
+inr_constant inr = Sim_Factory $ \g av sim -> replicate (days sim) inr
+
+inr_target :: Sim_Factory g INR
+inr_target = Sim_Factory $ \g av sim -> replicate (days sim) (tinr av)
+
+-- inr_spike :: Int -> Int -> Double -> Sim_Factory g INR
 
 testData = arrayToSimOut [1,2,3,4,5,1,2,3,4,3,3,4] [10, 10, 11, 12, 13, 10, 10,10,10,10] [True, True, True, False, False, False, False, False, False, True, False, False, False, False, True, True]
 
@@ -73,13 +118,10 @@ instance Monoid SimOutOps where
     where (Split f) = to_split a
           (Split g) = to_split b
 
-
-
 execute :: SimOutOps -> SimOut -> [SimOut]
 execute s input = let (Split f) = to_split s 
                 in filter (/=[]) $ f input
 
--- 5 lines
 splitByDose :: SimOutOps
 splitByDose = Split $ \out -> splitByDose' out
 
@@ -115,17 +157,14 @@ longest :: Reducer
 longest = Reducer $ \a b -> 
   if length a > length b then a else b 
 
-
-
 -- | return the longest table w/r/t to time elapsed. useful when only looking at checks.
 longest_elapsed :: Reducer 
-elapsed = Reducer $ \a b ->
+longest_elapsed = Reducer $ \a b ->
   if (days_elapsed a) > (days_elapsed b) then a else b
   where days_elapsed sim_out = day ( last sim_out ) - day ( head sim_out ) + 1
 
 -- | Calculate the dose based on the winning SimOut table 
 data DoseFunction = DoseFunction (SimOut -> Maybe INR)
-
 
 my_exe :: SimOutOps -> Reducer -> DoseFunction -> SimOut -> Maybe INR
 my_exe simOutOps r (DoseFunction f) sim_out =
@@ -133,6 +172,7 @@ my_exe simOutOps r (DoseFunction f) sim_out =
 
 firstDose = DoseFunction $ \sim_out -> Just $ dose $ head sim_out
 
+newtype StableDose = StableDose (Avatar -> SimOut -> Maybe Dose)
 
 main = do
   print $ my_exe (stableStreaks ((==) 1)) longest firstDose testData 
