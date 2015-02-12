@@ -162,6 +162,16 @@ filter_dfs_by_rows = function(rows) { function(df) {
   nrow(df) >= rows
 }}
 
+filter_dfs_by_min_check_interval = function(days) {
+  function(df) {
+    checks=df[df$Check !=0,]$Check
+    if(length(checks) == 0) { return(FALSE) }
+
+    max(checks) - min(checks) >= days
+
+  }
+}
+
 filter_dfs_by_num_checkups = function(checkups) { function(df) {
   calc_num_checkups(df) >= checkups
 }}
@@ -250,6 +260,13 @@ filter_unstable_inr = function(min=2,max=3) { function(sim_out) {
   list(sim_out[sim_out$INR >= min && sim_out$INR <= max])
 }}
 
+filter_uncheked_days = function(min=2,max=3) { function(sim_out) {
+  if(nrow(sim_out) == 0) { return(list()) }
+
+  list(sim_out[sim_out$Check != 0])
+
+}}
+
 
 
 # 2 Average weekly dose (irrespective of achieved INR) that the patient received
@@ -262,7 +279,18 @@ stable_def_2 = function (simulation) {
 # 3 The chronic (> 30 days) warfarin dose that led to an INR in the
 # therapeutic target range on several occasions.
 stable_def_3 = function (simulation) { 
-
+# Several occasions as in 3 checks.
+# Theraputic as in 2-3
+  exe(c( group_by_dose()
+       , filter_uncheck_days()
+       , group_by_inr_stability(2, 3)
+       , filter_unstable_inr(2, 3) 
+       )
+     ,c( filter_dfs_by_elapsed(30)
+       , filter_dfs_by_checks(3)
+       )
+     , choose_by_elapsed
+     )(simulation$sim_out) 
 }
 
 # 4 Warfarin therapeutic dose was defined as dose given when patients reach
@@ -270,9 +298,15 @@ stable_def_3 = function (simulation) {
 # consecutive INR measurements between 1.7-3 on the same warfarin daily or
 # weekly dose measured at least one week apart.
 stable_def_4 = function (simulation) { 
-  attach(simulation)
-  
-
+  exe(c( group_by_dose()
+       , filter_uncheck_days()
+       , group_by_inr_stability(1.7, 3)
+       , filter_unstable_inr(1.7, 3) 
+       )
+     ,c( filter_dfs_by_min_check_interval(7)
+       )
+     , choose_by_elapsed
+     )(simulation$sim_out)
 }
 
 # 5 Warfarin Therapeutic Dose was defined as a single mean weekly warfarin dose
@@ -289,7 +323,16 @@ stable_def_5 = function (simulation) {
 # range (2-3) on at least 3 consecutive clinic visits over a minimum period of 3
 # months.
 stable_def_6 = function (simulation) { 
-  FALSE #TODO
+  exe(c( group_by_dose()
+       , filter_uncheck_days()
+       , group_by_inr_stability(2, 3)
+       , filter_unstable_inr(2, 3) 
+       )
+     ,c( filter_dfs_by_days_elapsed(90)
+       , filter_dfs_by_checks(3)
+       )
+     , choose_by_elapsed
+     )
 }
 
 
@@ -308,7 +351,14 @@ stable_def_8 = function (simulation) {
 
 # 9 INR between 2 and 3 for a period >1 month.
 stable_def_9 = function (simulation) { 
-  FALSE #TODO
+  exe(c( group_by_inr_stability(2, 3)
+       , filter_unstable_inr(2, 3) 
+       )
+     ,c( filter_dfs_by_days_elapsed(30)
+       )
+     , choose_by_elapsed
+     )(simulation$sim_out)
+
 }
 
 # 10 The definition of stable dose reported here is as follows: Dose at which
