@@ -29,10 +29,15 @@ run_simulation =
 }
 
 x = run_simulation()
-# combine_f(c(group_by_dose(), group_by_inr_stability(2,3)))(x$sim_out)
+# cfv(c("id()", "group_by_dose()", "group_by_inr_stability(2,3)", "group_by_dose()", "filter_unstable_inr(2,3)"))(x$sim_out)
+
+cfv(c(group_by_dose()))(x$sim_out)
+# cfv(c(group_by_dose(), group_by_inr_stability(2,3), group_by_dose(), filter_unstable_inr(2,3)))(x$sim_out)
+
+stable_def_1(x)
 
 # this works
-combine_functions2(combine_functions2(group_by_dose() , group_by_inr_stability(2,3)), group_by_dose())(x$sim_out)
+#combine_functions2(combine_functions2(group_by_dose() , group_by_inr_stability(2,3)), group_by_dose())(x$sim_out)
 # this doesn't
 
 

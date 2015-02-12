@@ -11,48 +11,6 @@
 #  check: Vector containing check data
 
 
-# OK, this is about what it looks like if we make an
-# individual function for each def. So about 30 lines
-# of code. So the margin for error is pretty high.
-streak2 = function(data, f) {
-  streaks = c()
-  streak = FALSE
-  streak_start = NA
-
-  last_value = NA
-
-  for(i in 1:NROW(data)) {
-    current_value = f(last_value, data[i,])
-    step = current_value$step
-    # end current streak, but start new streak
-    if(streak && step == "reset") {
-      streak_start = i
-      streaks = append(streaks, list("start"=streak_start, "end"=i-1))
-      # start streak
-    } else if (!streak && step == "continue") {
-      streak = TRUE
-      streak_start = i
-      # end streak
-    } else if(streak && step == "stop") { 
-      streak = FALSE
-      streaks = append(streaks, list("start"=streak_start, "end"=i-1))
-    } 
-    last_value = current_value$out
-  }
-
-  if(streak) {
-    streaks = append(streaks, list("start"=streak_start, "end"=NROW(data)))
-  }
-
-  streaks_df = as.data.frame(streaks)
-  streaks_df$length <- (streaks_df$end - streaks_df$start + 1)
-  longest = streaks_df[order(streaks_df$length),][1,]
-
-
-  data[longest$start:longest$end,]
-
-}
-
 # Sketch. Calculate stable dose through a special kind of
 # function composition. These functions can do two things:
 #
@@ -103,19 +61,18 @@ streak2 = function(data, f) {
 
 
 
-combine_functions2 = function(f,g) {
+cf = function(f,g) {
   function(sim_out) {
     output = list()
     results = f(sim_out) 
-    
-    #this can probably be done using lapply
+
     for(result in results) {
       print("f output")
-      if(nrow(result) > 0) {
+      # filtering the dataframe, doesn't seem to delete any rows. However, columns it does
+      if(ncol(result) > 0) {
         results2 = g(result)
-      
         for(result2 in results2) {
-          if(nrow(result2) > 0) {
+          if(ncol(result2) > 0) {
             print("g output")
             output=append(output, list(result2))
           }
@@ -182,14 +139,54 @@ group_by_inr_stability = function(min, max) {
   }
 }
 
-filter_by_days_elapsed = function(days) {
-  function(sim_out) {
-    if(as.numeric(rownames(sim_out)[nrow(sim_out)]) -
-       as.numeric(rownames(sim_out)[1]) + 1 >= days) {
-      sim_out
-    } else { data.frame() }
-  }
+filter_unchecked_days = function() { function(sim_out) {
+  list(sim_out[sim_out$check != 0])  
 }
+}
+
+# calculate the days elapsed in a dataframe
+calc_days_elapsed = function(df) {
+  as.numeric(rownames(df)[nrow(df)] - as.numeric(rownames(df)[0])) + 1
+}
+
+# calculate the number of checkups within a dataframe
+calc_num_checkups = function(df) {
+  sum(df$INR != 0)
+}
+
+filter_dfs_by_days_elapsed = function(days) { function(df) {
+  calc_days_elapsed(df) >= days
+}}
+
+filter_dfs_by_rows = function(rows) { function(df) {
+  nrow(df) >= rows
+}}
+
+filter_dfs_by_num_checkups = function(checkups) { function(df) {
+  calc_num_checkups(df) >= checkups
+}}
+
+# roll predicates into one
+preds = function(predicates) { function(df) {
+  if(!is.vector(predicates)) {
+    predicates <- c(predicates)
+  }
+  for (predicate in predicates) {
+    if(!predicate(df)) { return(FALSE) }
+    else { print("okay") }
+  }
+  return(TRUE)
+}}
+
+# Selectors. Reduce lists of dataframes to one dataframe. Pick the latest (i.e. rightmost) dataframe in a tie.
+choose_by_rows = function(df1, df2) {
+  if(nrow(df1) > nrow(df2)) { df1 } else { df2 }
+}
+
+choose_by_days_elapsed = function(df1, df2 ) {
+  if(calc_days_elapsed(df1) > calc_days_elapsed(df2)) { df1 } else { df2 } 
+}
+
 
 remove_unstable_inr = function(min, max) {
   is_stable = function(x) { ((x >= min) * (x <= max)) == 1}
@@ -200,39 +197,46 @@ remove_unstable_inr = function(min, max) {
 }
 
 
+# execute the defs
+exe = function(groupers_and_filters, df_predicates, choice_function) { function(sim_out) {
+  result = Reduce(choice_function, (Filter(preds(df_predicates), (cfv(groupers_and_filters)(sim_out)))), init=data.frame())
+  if( nrow(result) == 0 ) { NA } else { mean(result$Dose) }
+}}
 
-exe = function(combinators, sim_out) {
 
-  results = list(sim_out)
-  for (combinator in combinators) { 
-    # appy comb to each df
-    results <- unlist(lapply(results, combinator), recursive=F)
-  }
-  return(results)
+cfv = function(vect) {
+  str=Reduce(function(a,b) { paste("cf(",a,",vect[[",b,"]])",sep="") }, 1:length(vect), init="id()")
+  print(str)
+  eval(parse(text=str))
 }
 
+cfv2 = function(vect) {
+  Reduce(function(a,b) { cf(a,b)}, vect)
+}
 
+high_low = function(f, a, b) { paste(f, "(", a, ",", b, ")") }
 
 # Definition of Stable Dose of Warfarin for Each Research Group
 
 # 1 The dose (unchanged for 6 days) that yielded an INR within 0.5 of the
 # target INR.
 stable_def_1 = function (simulation) { 
-  inr_low  = simutation$avatar$tinr - 0.5
-  inr_high = simutation$avatar$tinr + 0.5
+  inr_low  = simulation$avatar$TINR - 0.5
+  inr_high = simulation$avatar$TINR + 0.5
 
-  out =
-  combine_functions_2( group_by_dose()
-   , combine_functions2(group_by_inr_stability(inr_low, inr_high)
-      , combine_functions2(filter_unstable_inr(inr_low, inr_high), filter_by_days_elapsed(6)
-                          )
-                        )
-                      )(simulation$sim_out)
-  if(length(out) == 0) {
-    return(NA)
-  }
+  # Group doses together
+  # Then SubGroup stable INR together
+  # Filter out instances of unstable INR. Empty DFs get removed.
+  # Filter out data frames with less than 6 rows
+  # Choose the data frame with the most rows
 
-  tail(out)$INR[0]
+  exe(c( group_by_dose()
+       , group_by_inr_stability(inr_low, inr_high) 
+       , filter_unstable_inr(inr_low, inr_high) 
+       )
+     , filter_dfs_by_rows(6)
+     , choose_by_rows
+     )(simulation$sim_out) 
 }
 
 
@@ -240,22 +244,25 @@ only_on_checks = function(sim_out) {
   sim_out[sim_out$Check != 0,]
 }
 
-filter_unstable_inr = function(sim_out, min=2,max=3) {
-  sim_out[sim_out$INR >= min && sim_out$INR <= max]
-}
+filter_unstable_inr = function(min=2,max=3) { function(sim_out) {
+  if(nrow(sim_out) == 0) { return(list()) }
+
+  list(sim_out[sim_out$INR >= min && sim_out$INR <= max])
+}}
 
 
 
 # 2 Average weekly dose (irrespective of achieved INR) that the patient received
 # during the observation period, excluding the first 28 days after warfarin initiation.
 stable_def_2 = function (simulation) { 
+  if(nrow(simution$sim_out) <= 28) { return(NA) }
   mean(simulation$sim_out$Dose[29:NROW(simulation$sim_out)])
 }
 
 # 3 The chronic (> 30 days) warfarin dose that led to an INR in the
 # therapeutic target range on several occasions.
 stable_def_3 = function (simulation) { 
-  FALSE #TODO
+
 }
 
 # 4 Warfarin therapeutic dose was defined as dose given when patients reach
