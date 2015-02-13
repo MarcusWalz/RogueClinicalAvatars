@@ -4,17 +4,6 @@
 default_stable_inr_low = 2.0
 default_stable_inr_high = 3.0
 
-# 
-# ARGS:
-#  definiton: Integer between one through twenty
-# RETURNS:
-#  a function that takes the following three arguments:
-#  avatar
-#  inr:   Vector containing INR data
-#  dose:  Vector containing dose data
-#  check: Vector containing check data
-
-
 # Sketch. Calculate stable dose through a special kind of
 # function composition. These functions can do two things:
 #
@@ -306,6 +295,20 @@ exe = function(groupers_and_filters, df_predicates, choice_function, debug=FALSE
   if( nrow(result) == 0 ) { NA } else { mean(result$Dose) }
 }}
 
+
+# stable does definitions take simulation output a list where
+# 
+# $avatar     = clincial avatar
+# $simulation = simulation params (not used)
+# $sim_out    = simulation output where:
+#   rownames consists of the day (as a string)
+#   $Dose (in mg)
+#   $INR
+#   $Check (=rowname as an int)
+
+# returns a dose or...
+# returns NA if no stable dose exists
+# returns FALSE if stable dose definition isn't coded
 
 
 # Definition of Stable Dose of Warfarin for Each Research Group
