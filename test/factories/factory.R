@@ -11,9 +11,9 @@ source("check.R")
 run_simulation = 
   function ( avatar = avatars_random(n=1)
            , simulation = simulation_random(n=1)
-           , inr   = inr_bad
+           , inr   = inr_target()
            , dose  = dose_constant(10)
-           , check = check_every_n_days(7)
+           , check = check_every_n_days(3)
            ) 
 {
   list( "avatar"  = avatar
@@ -31,11 +31,12 @@ run_simulation =
 x = run_simulation()
 # cfv(c("id()", "group_by_dose()", "group_by_inr_stability(2,3)", "group_by_dose()", "filter_unstable_inr(2,3)"))(x$sim_out)
 
-cfv(c(group_by_dose()))(x$sim_out)
 # cfv(c(group_by_dose(), group_by_inr_stability(2,3), group_by_dose(), filter_unstable_inr(2,3)))(x$sim_out)
+print(x)
 
-stable_def_1(x)
-
+for(i in 1:21) {
+  cat(paste(i, " : ", get_stable_def(i)(x), "\n"))
+}
 # this works
 #combine_functions2(combine_functions2(group_by_dose() , group_by_inr_stability(2,3)), group_by_dose())(x$sim_out)
 # this doesn't

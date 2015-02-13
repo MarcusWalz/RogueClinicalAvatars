@@ -18,7 +18,7 @@ check_on = function(day = NA) {
 # Go for a check evey n days
 check_every_n_days = function(n = 7) {
   function(avatar, simulation) {
-    sapply(1:simulation$days, function(n){ if(n %% 7 == 0) { n } else { 0 }})
+    sapply(1:simulation$days, function(day){ if(day %% n == 0) { day } else { 0 }})
   }
 }
 

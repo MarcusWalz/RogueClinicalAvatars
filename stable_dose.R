@@ -1,4 +1,8 @@
-#  source("data/inr.R")
+# Constants
+
+# When it's not explicit, deauflt to these:
+default_stable_inr_low = 2.0
+default_stable_inr_high = 3.0
 
 # 
 # ARGS:
@@ -61,19 +65,18 @@
 
 
 
+# Compose grouping row-filter functions. 
 cf = function(f,g) {
   function(sim_out) {
     output = list()
     results = f(sim_out) 
 
     for(result in results) {
-      print("f output")
       # filtering the dataframe, doesn't seem to delete any rows. However, columns it does
       if(ncol(result) > 0) {
         results2 = g(result)
         for(result2 in results2) {
           if(ncol(result2) > 0) {
-            print("g output")
             output=append(output, list(result2))
           }
         }
@@ -83,13 +86,19 @@ cf = function(f,g) {
   }
 }
 
-combine_f = function(combs) { function(sim_out) {
-  Reduce(function(a,b) { combine_functions2(a,b) }, combs, right=F)
-  (sim_out) } }
+# Compose a vector/list of row-filter splitter functions 
+cfv = function(vect) {
+  str=Reduce(function(a,b) { paste("cf(",a,",vect[[",b,"]])",sep="") }, 1:length(vect), init="id()")
+  eval(parse(text=str))
+}
 
-# just for test
+# does absolutely nothing. q.v. cfv for use case
 id = function() {function(sim_out) { list(sim_out) }}
 
+# grouping functions:
+
+
+# sequentially partition into dfs with the same dose
 group_by_dose = function() { function(sim_out) {
   if(nrow(sim_out) == 1) { return(list(sim_out)) } 
 
@@ -112,7 +121,8 @@ group_by_dose = function() { function(sim_out) {
   frames = append(frames, list(current_frame))
 }}
 
-group_by_inr_stability = function(min, max) {
+# sequentially partition into dfs with all stable all unstable 
+group_by_inr_stability = function(min=default_stable_low, max=default_stable_high) {
 
   is_stable = function(x) { x >= min && x <= max }
 
@@ -139,14 +149,23 @@ group_by_inr_stability = function(min, max) {
   }
 }
 
+# filter out tables with unstable inr
+filter_unstable_inr = function(min=default_stable_low,max=default_stable_high) { function(sim_out) {
+  if(nrow(sim_out) == 0) { return(list()) }
+
+  list(sim_out[sim_out$INR >= min && sim_out$INR <= max,])
+}}
+
+# filter out days where no check was taken
 filter_unchecked_days = function() { function(sim_out) {
-  list(sim_out[sim_out$check != 0])  
-}
-}
+  if(nrow(sim_out) == 0) { return(list()) } 
+  list(sim_out[sim_out$Check != 0,])  
+}}
 
 # calculate the days elapsed in a dataframe
 calc_days_elapsed = function(df) {
-  as.numeric(rownames(df)[nrow(df)] - as.numeric(rownames(df)[0])) + 1
+  if(nrow(df) == 0) { return(0) } 
+  as.numeric(rownames(df)[nrow(df)]) - as.numeric(rownames(df)[1]) + 1
 }
 
 # calculate the number of checkups within a dataframe
@@ -154,77 +173,72 @@ calc_num_checkups = function(df) {
   sum(df$INR != 0)
 }
 
+# filter out dfs where fewer than n days elapsed
 filter_dfs_by_days_elapsed = function(days) { function(df) {
   calc_days_elapsed(df) >= days
 }}
 
+# filter out dfs with fewer than n rows
 filter_dfs_by_rows = function(rows) { function(df) {
   nrow(df) >= rows
 }}
 
+# filter dfs where fewer than n checks take place
+filter_dfs_by_checks = function(checks) { function(df) {
+  calc_num_checkups(df) >= checks
+}}
+
+# keep dfs where max(checks) - min(checks)+1 >= days
+# i.e. where at least n days elapsed between checks
 filter_dfs_by_min_check_interval = function(days) {
   function(df) {
     checks=df[df$Check !=0,]$Check
     if(length(checks) == 0) { return(FALSE) }
 
-    max(checks) - min(checks) >= days
+    max(checks) - min(checks) + 1 >= days
 
   }
 }
 
-filter_dfs_by_num_checkups = function(checkups) { function(df) {
-  calc_num_checkups(df) >= checkups
-}}
-
-# roll predicates into one
-preds = function(predicates) { function(df) {
-  if(!is.vector(predicates)) {
-    predicates <- c(predicates)
-  }
-  for (predicate in predicates) {
-    if(!predicate(df)) { return(FALSE) }
-    else { print("okay") }
-  }
-  return(TRUE)
+# roll multiple predicates into one. Used in exe.
+preds = function(predicates=c()) { function(df) {
+  if(length(predicates) == 0) { return(TRUE) }
+  all(Map(function(p) { p(df) }, predicates))
 }}
 
 # Selectors. Reduce lists of dataframes to one dataframe. Pick the latest (i.e. rightmost) dataframe in a tie.
+
+# pick the biggest df in terms of number of rows
 choose_by_rows = function(df1, df2) {
   if(nrow(df1) > nrow(df2)) { df1 } else { df2 }
 }
 
-choose_by_days_elapsed = function(df1, df2 ) {
+# pick the biggest df in terms of the number of days elapsed
+choose_by_days_elapsed = function(df1, df2) {
   if(calc_days_elapsed(df1) > calc_days_elapsed(df2)) { df1 } else { df2 } 
 }
 
 
-remove_unstable_inr = function(min, max) {
-  is_stable = function(x) { ((x >= min) * (x <= max)) == 1}
-
-  function(sim_out) {
-    list(sim_out[is_stable(sim_out$INR),]) 
-  }
-}
-
-
 # execute the defs
-exe = function(groupers_and_filters, df_predicates, choice_function) { function(sim_out) {
-  result = Reduce(choice_function, (Filter(preds(df_predicates), (cfv(groupers_and_filters)(sim_out)))), init=data.frame())
+exe = function(groupers_and_filters, df_predicates, choice_function, debug=FALSE) { function(sim_out) {
+  if(debug) {
+    a = cfv(groupers_and_filters)(sim_out)
+    print("groupers")
+    print(a)
+    print("df preds")
+    b = Filter(preds(df_predicates), a)
+    print(b)
+    print("reducer")
+    result = Reduce(choice_function, b, init=data.frame())
+    print(result)
+  }
+  else {
+    result = Reduce(choice_function, (Filter(preds(df_predicates), (cfv(groupers_and_filters)(sim_out)))), init=data.frame())
+  }
   if( nrow(result) == 0 ) { NA } else { mean(result$Dose) }
 }}
 
 
-cfv = function(vect) {
-  str=Reduce(function(a,b) { paste("cf(",a,",vect[[",b,"]])",sep="") }, 1:length(vect), init="id()")
-  print(str)
-  eval(parse(text=str))
-}
-
-cfv2 = function(vect) {
-  Reduce(function(a,b) { cf(a,b)}, vect)
-}
-
-high_low = function(f, a, b) { paste(f, "(", a, ",", b, ")") }
 
 # Definition of Stable Dose of Warfarin for Each Research Group
 
@@ -244,36 +258,17 @@ stable_def_1 = function (simulation) {
        , group_by_inr_stability(inr_low, inr_high) 
        , filter_unstable_inr(inr_low, inr_high) 
        )
-     , filter_dfs_by_rows(6)
+     ,c(filter_dfs_by_rows(6)
+       )
      , choose_by_rows
      )(simulation$sim_out) 
 }
 
-
-only_on_checks = function(sim_out) {
-  sim_out[sim_out$Check != 0,]
-}
-
-filter_unstable_inr = function(min=2,max=3) { function(sim_out) {
-  if(nrow(sim_out) == 0) { return(list()) }
-
-  list(sim_out[sim_out$INR >= min && sim_out$INR <= max])
-}}
-
-filter_uncheked_days = function(min=2,max=3) { function(sim_out) {
-  if(nrow(sim_out) == 0) { return(list()) }
-
-  list(sim_out[sim_out$Check != 0])
-
-}}
-
-
-
 # 2 Average weekly dose (irrespective of achieved INR) that the patient received
 # during the observation period, excluding the first 28 days after warfarin initiation.
 stable_def_2 = function (simulation) { 
-  if(nrow(simution$sim_out) <= 28) { return(NA) }
-  mean(simulation$sim_out$Dose[29:NROW(simulation$sim_out)])
+  if(nrow(simulation$sim_out) <= 28) { return(NA) }
+  mean(simulation$sim_out$Dose[29:NROW(simulation$sim_out)])*7 # they say weekly dose
 }
 
 # 3 The chronic (> 30 days) warfarin dose that led to an INR in the
@@ -282,14 +277,14 @@ stable_def_3 = function (simulation) {
 # Several occasions as in 3 checks.
 # Theraputic as in 2-3
   exe(c( group_by_dose()
-       , filter_uncheck_days()
-       , group_by_inr_stability(2, 3)
-       , filter_unstable_inr(2, 3) 
+       , filter_unchecked_days()
+       , group_by_inr_stability()
+       , filter_unstable_inr() 
        )
-     ,c( filter_dfs_by_elapsed(30)
-       , filter_dfs_by_checks(3)
+     ,c( filter_dfs_by_days_elapsed(30)
+       , filter_dfs_by_rows(3)
        )
-     , choose_by_elapsed
+     , choose_by_days_elapsed
      )(simulation$sim_out) 
 }
 
@@ -299,13 +294,13 @@ stable_def_3 = function (simulation) {
 # weekly dose measured at least one week apart.
 stable_def_4 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_uncheck_days()
+       , filter_unchecked_days()
        , group_by_inr_stability(1.7, 3)
        , filter_unstable_inr(1.7, 3) 
        )
      ,c( filter_dfs_by_min_check_interval(7)
        )
-     , choose_by_elapsed
+     , choose_by_days_elapsed
      )(simulation$sim_out)
 }
 
@@ -324,15 +319,15 @@ stable_def_5 = function (simulation) {
 # months.
 stable_def_6 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_uncheck_days()
+       , filter_unchecked_days()
        , group_by_inr_stability(2, 3)
        , filter_unstable_inr(2, 3) 
        )
      ,c( filter_dfs_by_days_elapsed(90)
        , filter_dfs_by_checks(3)
        )
-     , choose_by_elapsed
-     )
+     , choose_by_days_elapsed
+     )(simulation$sim_out)
 }
 
 
@@ -356,23 +351,42 @@ stable_def_9 = function (simulation) {
        )
      ,c( filter_dfs_by_days_elapsed(30)
        )
-     , choose_by_elapsed
+     , choose_by_days_elapsed
      )(simulation$sim_out)
-
 }
 
 # 10 The definition of stable dose reported here is as follows: Dose at which
 # INR was within therapeutic range (+/- 0.2 INR units) on 3 consecutive visits, with <90
 # days between subsequent visits.
 stable_def_10 = function (simulation) { 
-  FALSE #TODO
+
+#TODO what do they mean by 90 days between subsequent visits?
+
+  inr_low  = simulation$avatar$TINR - 0.2
+  inr_high = simulation$avatar$TINR + 0.2
+
+  exe(c( group_by_dose()
+       , filter_unchecked_days()
+       , group_by_inr_stability(inr_low, inr_high)
+       , filter_unstable_inr(inr_low, inr_high) 
+       )
+     ,c( filter_by_checks(3)            
+       )
+     , choose_by_days_elapsed
+     )(simulation$sim_out)
 }
 
 # 11 The same warfarin dose for at least 3 consecutive clinic visits. No INR criteria to
 # define stable dose was used because it was assumed that either the INR was in
 # range at each visit or was not sufficiently out-of-range to elicit a change in dose.
 stable_def_11 = function (simulation) { 
-  FALSE #TODO
+  exe(c( group_by_dose()
+       , filter_unchecked_days()
+       )
+     ,c( filter_by_checks(3)            
+       )
+     , choose_by_days_elapsed
+     )(simulation$sim_out)
 }
 
 
@@ -388,19 +402,39 @@ stable_def_12 = function (simulation) {
 # no apparent cause for low dose requirement such as drug interactions or
 # liver disease.
 stable_def_13 = function (simulation) { 
+# The second sentence can't be coded. 
+
   FALSE #TODO
 }
 
 # 14 Dose that lead to stable INR over 3 visits.
 stable_def_14 = function (simulation) { 
-  FALSE #TODO
+  exe(c( group_by_dose()
+       , filter_unchecked_days()
+       , group_by_inr_stability()
+       , filter_unstable_inr() 
+       )
+     ,c( filter_by_checks(3)            
+       )
+     , choose_by_days_elapsed
+     )(simulation$sim_out)
 }
+
 
 # 15 Warfarin therapeutic dose was defined as warfarin dose at stable anticoagulation.
 # Stable anticoagulation was defined when 2 consecutive INR measurements done
 # at least 7 days apart were within the desired therapeutic range (i.e. 2-3),
 # while warfarin dose was not changed.
 stable_def_15 = function (simulation) { 
+  exe(c( group_by_dose()
+       , filter_unchecked_days()
+       , group_by_inr_stability()
+       , filter_unstable_inr() 
+       )
+     ,c( filter_by_checks(3)            
+       )
+     , choose_by_days_elapsed
+     )(simulation$sim_out)
   FALSE #TODO
 }
 
@@ -445,7 +479,7 @@ stable_def_21 = function (simulation) {
   FALSE #TODO
 }
 
-getStableDefinition = function (group_number) {
+get_stable_def = function (group_number) {
 
   get(paste("stable_def_", as.character(group_number), sep = ""))
 
