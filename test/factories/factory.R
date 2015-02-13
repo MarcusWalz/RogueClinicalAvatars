@@ -35,7 +35,7 @@ x = run_simulation()
 print(x)
 
 for(i in 1:21) {
-  cat(paste(i, " : ", get_stable_def(i)(x), "\n"))
+  cat(paste(i,get_stable_def(i)(x), "\n"))
 }
 # this works
 #combine_functions2(combine_functions2(group_by_dose() , group_by_inr_stability(2,3)), group_by_dose())(x$sim_out)
