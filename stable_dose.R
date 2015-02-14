@@ -609,6 +609,9 @@ stable_def_20 = function (simulation) {
 # measurements encompassing a period of at least 2 weeks, with a maximum
 # difference between the mean daily dosages of 10%.
 stable_def_21 = function (simulation) { 
+  inr_low  = simulation$avatar$TINR - 0.5
+  inr_high = simulation$avatar$TINR + 0.5
+
   FALSE #TODO
 }
 
