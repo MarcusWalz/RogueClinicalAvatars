@@ -1,9 +1,5 @@
 # Constants
 
-# When it's not explicit, deauflt to these:
-default_stable_inr_low = 2.0
-default_stable_inr_high = 3.0
-
 # Sketch. Calculate stable dose through a special kind of
 # function composition. These functions can do two things:
 #
@@ -224,7 +220,11 @@ filter_dfs_by_checks = function(checks) { function(df) {
   calc_num_checkups(df) >= checks
 }}
 
-filter_dfs_by_consecutive_stable_checkups = function(checks,min,max) { function(df) {
+filter_dfs_by_stable_checks = function(checks,min,max) { function(df) {
+  nrow(df[df$Check != 0 && df$INR >= min && df$INR <= max, ]) >= checks
+}}
+
+filter_dfs_by_consecutive_stable_checks = function(checks,min,max) { function(df) {
   calc_num_stable_consecutive_checkups(df, min, max) >= checks
 }}
 # keep dfs where max(checks) - min(checks)+1 >= days
@@ -326,7 +326,7 @@ stable_def_1 = function (simulation) {
        )
      ,c(filter_dfs_by_rows(6)
        )
-     , choose_by_rows
+     , choose_by_days_elapsed
      )(simulation$sim_out) 
 }
 
@@ -340,20 +340,19 @@ stable_def_2 = function (simulation) {
 # 3 The chronic (> 30 days) warfarin dose that led to an INR in the
 # therapeutic target range on several occasions.
 stable_def_3 = function (simulation) { 
+# Assumption: several = 3
   inr_low  = simulation$avatar$TINR - 0.5
   inr_high = simulation$avatar$TINR + 0.5
 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability(inr_low, inr_high)
-       , filter_unstable_inr(inr_low, inr_high) 
        )
      ,c( filter_dfs_by_days_elapsed(30)
-       , filter_dfs_by_rows(3)
+       , filter_dfs_by_stable_checks(3, inr_low, inr_high)
        )
      , choose_by_days_elapsed
      )(simulation$sim_out) 
 }
+
 
 # 4 Warfarin therapeutic dose was defined as dose given when patients reach
 # stable therapeutic INR. Stable therapeutic INR was defined as at least two
@@ -361,11 +360,8 @@ stable_def_3 = function (simulation) {
 # weekly dose measured at least one week apart.
 stable_def_4 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability(1.7, 3)
-       , filter_unstable_inr(1.7, 3) 
        )
-     ,c( filter_dfs_has_check_gte_days_apart(7)
+     ,c( filter_dfs_by_consecutive_stable_checks(2, 1.7, 3)
        )
      , choose_by_days_elapsed
      )(simulation$sim_out)
@@ -384,7 +380,7 @@ stable_def_5 = function (simulation) {
   exe(c( filter_unchecked_days()
        , group_by_similar_dose(0.1)
        )
-     ,c( filter_dfs_by_consecutive_stable_checkups(3, inr_low, inr_high)
+     ,c( filter_dfs_by_consecutive_stable_checks(3, inr_low, inr_high)
        )
      , choose_by_days_elapsed
      )(simulation$sim_out)
@@ -395,12 +391,9 @@ stable_def_5 = function (simulation) {
 # months.
 stable_def_6 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability(2, 3)
-       , filter_unstable_inr(2, 3) 
        )
      ,c( filter_dfs_by_days_elapsed(90)
-       , filter_dfs_by_checks(3)
+       , filter_dfs_by_consecutive_stable_checks(3, 2, 3)
        )
      , choose_by_days_elapsed
      )(simulation$sim_out)
@@ -411,12 +404,10 @@ stable_def_6 = function (simulation) {
 # where INR measures are taken at least 3 days but less than 8 days apart.
 stable_def_7 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability(2, 3.5)
-       , filter_unstable_inr(2, 3.5) 
        )
      ,c( filter_dfs_has_check_gte_days_apart(3)
        , filter_dfs_has_check_lte_days_apart(8)
+       , filter_dfs_by_consecutive_stable_checks(2, 2, 3.5)
        )
      , choose_by_days_elapsed
      )(simulation$sim_out)
@@ -430,9 +421,8 @@ stable_def_8 = function (simulation) {
   inr_high = simulation$avatar$TINR + 0.5
 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
        )
-     ,c( filter_dfs_by_consecutive_stable_checkups(3, inr_low, inr_high)
+     ,c( filter_dfs_by_consecutive_stable_checks(3, inr_low, inr_high)
        , filter_dfs_by_days_elapsed(90)
        )
      , choose_by_days_elapsed
@@ -459,9 +449,8 @@ stable_def_10 = function (simulation) {
   inr_high = simulation$avatar$TINR + 0.2
 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
        )
-     ,c( filter_dfs_by_consecutive_stable_checkups(3, inr_low, inr_high)
+     ,c( filter_dfs_by_consecutive_stable_checks(3, inr_low, inr_high)
        , filter_dfs_has_check_lte_days_apart(90) # a bit redundent
        )
      , choose_by_days_elapsed
@@ -473,7 +462,6 @@ stable_def_10 = function (simulation) {
 # range at each visit or was not sufficiently out-of-range to elicit a change in dose.
 stable_def_11 = function (simulation) { 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
        )
      ,c( filter_dfs_by_checks(3)            
        )
@@ -494,19 +482,18 @@ stable_def_12 = function (simulation) {
 # no apparent cause for low dose requirement such as drug interactions or
 # liver disease.
 stable_def_13 = function (simulation) { 
-# The second sentence can't be coded. 
-
   FALSE #TODO
 }
 
 # 14 Dose that lead to stable INR over 3 visits.
 stable_def_14 = function (simulation) { 
+
+  inr_low  = simulation$avatar$TINR - 0.5
+  inr_high = simulation$avatar$TINR + 0.5
+
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability()
-       , filter_unstable_inr() 
        )
-     ,c( filter_dfs_by_checks(3)            
+     ,c( filter_dfs_by_stable_checks(3,inr_low, inr_high)            
        )
      , choose_by_days_elapsed
      )(simulation$sim_out)
@@ -518,6 +505,8 @@ stable_def_14 = function (simulation) {
 # at least 7 days apart were within the desired therapeutic range (i.e. 2-3),
 # while warfarin dose was not changed.
 stable_def_15 = function (simulation) { 
+
+
   exe(c( group_by_dose()
        , filter_unchecked_days()
        , group_by_inr_stability(2,3)
@@ -533,15 +522,13 @@ stable_def_15 = function (simulation) {
 # 16 Warfarin dose that lead to the target INR, usually 2-3 on 1 or more
 # occasions over a minimum of 30 days.
 stable_def_16 = function (simulation) { 
+# assumption:
   inr_low  = simulation$avatar$TINR - 0.5
   inr_high = simulation$avatar$TINR + 0.5
 
   exe(c( group_by_dose()
-       , filter_unchecked_days()
-       , group_by_inr_stability(inr_low,inr_high)
-       , filter_unstable_inr(inr_low,inr_high) 
        )
-     ,c( filter_dfs_by_checks(1)            
+     ,c( filter_dfs_by_stable_checks(1)            
        , filter_dfs_by_days_elapsed(30)
        )
      , choose_by_days_elapsed
