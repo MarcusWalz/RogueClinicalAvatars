@@ -1,4 +1,3 @@
-source("../../data/avatar.R")
 
 # Generates a random avatar. Nothing Fancy goes on to make the avatar realistic.
 # E.g. BMI is completly independent of height and weight.

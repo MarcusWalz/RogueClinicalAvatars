@@ -1,30 +1,30 @@
-source("../../protocols.R")
-source("../../stable_dose.R")
 
-source("avatar.R")
-source("simulation.R")
-source("inr.R")
-source("dose.R")
-source("check.R")
-
-
-run_simulation = 
-  function ( avatar = avatars_random(n=1)
-           , simulation = simulation_random(n=1)
-           , inr   = inr_target()
-           , dose  = dose_constant(10)
-           , check = check_every_n_days(3)
-           ) 
-{
-  list( "avatar"  = avatar
-      , "sim"     = simulation
-      , "sim_out" =
+# legacy output style
+sim_out_df = function(avatar, simulation) {
+  function( inr   = inr_target()
+          , dose  = dose_constant
+          , check = check_every_n_days(3)
+          ) {
         as.data.frame(
           list ( "INR"    = inr   (avatar, simulation)
                , "Dose"   = dose  (avatar, simulation)
                , "Check"  = check (avatar, simulation)
                )
-        ) 
+          )
+  }
+}
+
+run_simulation = 
+  function ( avatar = avatars_random()
+           , simulation = simulation_random()
+           , inr   = inr_target()
+           , dose  = dose_constant(10)
+           , check = check_every_n_days(3)
+           ) 
+  {
+  list( "avatar"  = avatar
+      , "sim"     = simulation
+      , "sim_out" = sim_out_df(avatar, simulation)(inr, dose, check)
       )
 }
 
