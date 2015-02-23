@@ -1,4 +1,5 @@
-load("prob_table.Rdata")
+args <- commandArgs(trailingOnly = TRUE)
+load(args[1])
 
 tables = table
 
