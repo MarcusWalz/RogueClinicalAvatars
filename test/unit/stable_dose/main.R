@@ -3,41 +3,18 @@ test_truth = function() { TRUE }
 av = avatars_random()
 sim = simulation_random()
 
-
-is_lt = function (obj, value) {
-  obj < value
-}
-is_gt = function (obj, value) {
-  obj > value
-}
-
-is_lte = function (obj, value) {
-  obj =< value
-}
-is_gte = function (obj, value) {
-  if(obj >= value) {
-    TRUE
-  } else {
-    paste(obj, "should be greater than or equal to", value)
-  }
-
-}
-
-
-
-
 p = function(obj, comp, value) { 
   comp(obj,value)
 }
 
 # One dose splice, should get three dfs back
 test_group_by_dose_1 = function () {
-  length(sim_out_df(av,sim)( dose = dose_spike(30) )) == 3
+  length(group_by_dose()(sim_out_df(av,sim)( dose = dose_spike(20)))) == 3
 }
 
 # Constant dose, should get only 1 df back
 test_group_by_dose_2 = function () {
-  length(sim_out_df(av,sim)( dose = dose_constant() )) == 1
+  length(group_by_dose()(sim_out_df(av,sim)( dose = dose_constant() ))) == 1
 }
 
 test_group_by_similar_dose = NA
@@ -58,52 +35,8 @@ test_filter_dfs_by_stable_checks = NA
 test_filter_dfs_by_consecutive_stable_checks = NA
 test_filter_dfs_has_check_gte_days_apart = NA
 test_filter_dfs_has_check_lte_days_apart = NA
-
 test_preds = NA
-
-
 test_choose_by_rows = NA
-
-
-
-p = function(obj, comp, value) { 
-  case 
-}
-
-# One dose splice, should get three dfs back
-test_group_by_dose_1 = function () {
-  length(sim_out_df(av,sim)( dose = dose_spike(30) )) == 3
-}
-
-# Constant dose, should get only 1 df back
-test_group_by_dose_2 = function () {
-  length(sim_out_df(av,sim)( dose = dose_constant() )) == 1
-}
-
-test_group_by_similar_dose = NA
-
-test_group_by_inr_stability = NA
-
-test_filter_unstable_inr = NA
-test_filter_unchecked_days = NA
-
-tets_calc_days_elapsed = NA
-test_calc_num_stable_consecutive_checkups = NA
-
-test_filter_dfs_by_days_elapsed = NA
-
-test_filter_dfs_by_rows = NA
-test_filter_dfs_by_checks = NA
-test_filter_dfs_by_stable_checks = NA
-test_filter_dfs_by_consecutive_stable_checks = NA
-test_filter_dfs_has_check_gte_days_apart = NA
-test_filter_dfs_has_check_lte_days_apart = NA
-
-test_preds = NA
-
-
-test_choose_by_rows = NA
-
 test_choose_by_days_elapsed = NA
 
 NUM_NA_TESTS = 0
