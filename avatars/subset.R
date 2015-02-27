@@ -8,8 +8,8 @@ table = read.delim(table_name, header=T)
 
 for (i in 1:times) {
 
-  output_table_name         = paste(table_name, ".", i, ".subset", sep="")
-  output_table_name_discard = paste(table_name, ".", i, ".subset.discard", sep="")
+  output_table_name         = paste(table_name, ".", i, ".keep",    sep="")
+  output_table_name_discard = paste(table_name, ".", i, ".discard", sep="")
 
 
   samples = sample(1:nrow(table), n, replace = FALSE)

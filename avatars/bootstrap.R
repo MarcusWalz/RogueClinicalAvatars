@@ -2,7 +2,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 table_name = args[1]
 
-output_table_name = paste(table_name, ".bootstrapped", sep="")
+output_table_name = paste(table_name, ".bs", sep="")
 
 table = read.delim(table_name, header=T)
 
