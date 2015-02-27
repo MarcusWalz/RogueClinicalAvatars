@@ -2,39 +2,39 @@
 1. Bootstrap dataset:
 
   ``` 
-  Rscript bootstrap.R avatars.txt
+  Rscript bootstrap.R < avatars.txt > bs_avatars.txt
   ```
-  **Outputs avatars.txt.bs**
 
 2. Subset avatars 
 
   ```
-  Rscript subset.R avatars.txt.bs 5 10
+  Rscript sub_avatars sub_avatars 5 10 < bs_avatars
   ```
 
-  **Outputs `avatars.txt.bs.[1-5].subset` and
-  `avatars.txt.bs.[1-5].discard`**
-
   Creates 5 samplings with 10 random avatars each.
+
+  **Outputs `sub_avatars.[1-5]` and
+  `sub_avatars.[1-5].discard`**
+
+  where `sub_avatars.n + sub_avatars.n.discard` = bs_avatars
+
 
 3. Generate BNM and Produce Avatars 
 
   ```
-  ./make_avatars.sh avatars.bs.1.keep 1000
+  ./make_avatars.sh 1000 sub_avatars.1.keep
   ```
 
   - Outputs BNM prob table used to generate the avatars. In the file:
-  `avatars.txt.bootsrapped.1.ptable.rb` and 
-  `avatars.txt.bs.1.ptable.Rdata`
+  `sub_avatars.1.ptable.rb` and 
+  `sub_avatars.1.ptable.Rdata`
 
-  - Creates 1000 avatars using BNM. In the file `avatars.txt.bs.1.bnm `
-
-
+  - Creates 1000 avatars using BNM. In the file `sub_avatars.1.bnm `
 
 4. Merge tables into one:
 
   ```
-  Rscript merge.R output_avatars.txt avatars.txt.bs.*.bnm
+  Rscript merge.R sub_avatars.*.bnm > output_table.txt 
   ```
 
   merges everything matching the glob into `output_avatars.txt`
