@@ -14,7 +14,7 @@
   **Outputs `avatars.txt.bootstrapped.[1-5].subset` and
   `avatars.txt.bootstrapped.[1-5].discard`**
 
-  Creates 5 sampling with 10 avatars each.
+  Creates 5 samplings with 10 random avatars each.
 
 3. Generate BNM and Produce Avatars 
 

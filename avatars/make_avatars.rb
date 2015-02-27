@@ -1,10 +1,12 @@
 prob_tables=eval(File.open(ARGV[0]).read)
 
-#TODO use frequencies!!!!
-#TODO not tested 
+#TODO use frequencies!!!! Stop Multiplying by 100!
 def prob_table_to_rand_value(prob_table, drop_missing=false)
   if prob_table == nil then return "no p-table" end
+
   l = []
+
+
   prob_table["probs"].each do |value,freq| 
     unless value == "*" then
       l += [value] * (freq * 100).floor
