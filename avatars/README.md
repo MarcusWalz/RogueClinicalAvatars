@@ -8,28 +8,32 @@
 2. Subset avatars 
 
   ```
-  Rscript sub_avatars.R sub_avatars 5 10 < bs_avatars
+  Rscript subset.R --percent 10 < bs_avatars > sub_avatars
   ```
 
-  Creates 5 samplings with 10 random avatars each.
+  Sample 10% of the avatars randomly.
 
-  **Outputs `sub_avatars.[1-5]` and
-  `sub_avatars.[1-5].discard`**
+  **or**
 
-  where `sub_avatars.n + sub_avatars.n.discard` = bs_avatars
+  ```
+  Rscript subset.R --avatars 100 < bs_avatars > sub_avatars
+  ```
+
+  Sample 100 avatars.
+
+  Use the `--inverse` flag to stream unsampled avatars to 'stderr' e.g.
+  in bash:
+
+  ```
+  Rscript subset.R --avatars 100 < my_avatars > sampled_avatars 2> unsampled_avatars
+  ```
 
 
 3. Generate BNM and Produce Avatars 
 
   ```
-  ./make_avatars.sh 1000 sub_avatars.1 > sub_avatars.1.gen
+  ./make_avatars.sh 1000 < sub_avatars > sub_avatars.gen
   ```
-
-  - Outputs BNM prob table used to generate the avatars. In the file:
-  `sub_avatars.1.ptable.rb` and 
-  `sub_avatars.1.ptable.Rdata`
-
-  - Creates 1000 avatars using BNM and sends the result to stdout. 
 
 4. Merge tables into one:
 
@@ -37,4 +41,11 @@
   Rscript merge.R sub_avatars.*.gen > avatars.txt 
   ```
 
-  merges everything matching the glob into `output_avatars.txt`
+  Merges everything matching the glob into `output_avatars.txt`
+
+Putting it all together:
+
+```
+./bootstrap.R < avatars | ./sub_avatars.L | ./train_avatars | ./make_avatars
+
+```

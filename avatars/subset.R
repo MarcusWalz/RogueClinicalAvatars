@@ -1,26 +1,44 @@
 # send table in via stdin
 # arg1 output file prefix
-# arg2 number of tables to make
-# arg3 number of random samples to take from table
+
+library('getopt')
+
+spec = matrix(
+  c('percent', 'p', 1, 'double'
+   ,'rows',    'r', 1, 'integer'
+   ,'inverse', 'i', 0, 'logical'
+   ,'help',    'h', 0, 'logical'
+  ), byrow = TRUE, ncol = 4)
+
+opt = getopt(spec)
+
+if ( !is.null(opt$help) ) {
+  cat(getopt(spec, usage=TRUE));
+  q(status=1);
+}
+
+# read in table
+table = read.delim(file('stdin'), header=T)
+
+
+if(is.null(opt$rows)) { 
+  if(!is.null(opt$percent)) {
+     opt$rows = nrow(table) * opt$percent
+  } else {
+    cat("Either percent or rows must be set")
+    q(status=0)
+  }
+}
 
 args <- commandArgs(trailingOnly = TRUE)
 
-prefix = args[1]
-times = as.numeric(args[2])
-n = as.numeric(args[3])
+samples = sample(1:nrow(table), opt$rows, replace = FALSE)
 
-table = read.delim(file('stdin'), header=T)
+out = table[samples,]
+write.table(out, "", sep="\t") 
 
-for (i in 1:times) {
-
-  output_table_name         = paste(prefix, ".", i, ".keep",    sep="")
-  output_table_name_discard = paste(prefix, ".", i, ".discard", sep="")
-
-  samples = sample(1:nrow(table), n, replace = FALSE)
-
-  out = table[samples,]
-  write.table(out, output_table_name, sep="\t") 
-
+if ( !is.null(opt$inverse) ) {
   out = table[samples*-1,]
-  write.table(out, output_table_name_discard, sep="\t") 
+  write.table(out, stderr(), sep="\t") 
 }
+
