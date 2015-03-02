@@ -8,7 +8,7 @@
 2. Subset avatars 
 
   ```
-  Rscript subset.R --percent 10 < bs_avatars > sub_avatars
+  Rscript sample.R --percent 10 < bs_avatars > sub_avatars
   ```
 
   Sample 10% of the avatars randomly.
@@ -16,7 +16,7 @@
   **or**
 
   ```
-  Rscript subset.R --avatars 100 < bs_avatars > sub_avatars
+  Rscript sample.R --avatars 100 < bs_avatars > sub_avatars
   ```
 
   Sample 100 avatars.
@@ -25,7 +25,7 @@
   in bash:
 
   ```
-  Rscript subset.R --avatars 100 < my_avatars > sampled_avatars 2> unsampled_avatars
+  Rscript sample.R --avatars 100 < my_avatars > sampled_avatars 2> unsampled_avatars
   ```
 
 
@@ -46,6 +46,7 @@
 Putting it all together:
 
 ```
-./bootstrap.R < avatars | ./sub_avatars.L | ./train_avatars | ./make_avatars
+./bootstrap.R < avatars | ./sample.R --percent .80 | ./train_avatars | ./make_avatars 100 \
+> my_avatars
 
 ```
