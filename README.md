@@ -26,32 +26,36 @@ TODO
 
 - Pass simulation paramaters as an R list, e.g.:
 
-```
-simulation =
-  list( initial_dose = "my_initial_dose"  # or a number for a preset initial dose
-      , protocol     = "my_protocol"
-      , max_dose     = "15"
-      , days         = 100
-      ...
-      )
-```
+  ```
+  simulation =
+    list( initial_dose = "my_initial_dose"  # or a number for a preset initial dose
+        , protocol     = "my_protocol"
+        , max_dose     = "15"
+        , days         = 100
+        , seed         = 4321
+        )
+  ```
 
 
 - Modify `protocols.R` s.t. each protocol so that:
 
-All protocols end in `_protocol` so we can safely fetch a protocol using `ls() and get()`.
+  All protocols end in `_protocol` so we can safely fetch a protocol using
+  `ls()` and `get()`.
 
-```
-my_protocol = function(avatar, simulation) { 
-  # if a protocol requires auxilary fields, check the avatar before returning protocol.
-  function(INR, dose, day) {
-    ...
+  ```
+  my_protocol = function(avatar, simulation) { 
+    # if a protocol requires auxilary fields.
+    # check the avatar before returning protocol. 
+
+    # if the avatar is invalid, write an error message and terminate.
+
+    function(INR, dose, day) {
+      ...
+    }
   }
-}
-```
+  ```
 
-This way we can avoid that huge if/else statement in `simulator.R`
-and keep all protocol specific logic inside `protocols.R`.
+  This way we can avoid that huge if/else statement in `simulator.R`
+  and keep all protocol specific logic inside `protocols.R`.
 
 - Do something similar for `initial_dose.R`.
-- Modify `initial_dosing.R`
