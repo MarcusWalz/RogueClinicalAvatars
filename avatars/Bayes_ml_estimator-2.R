@@ -1,5 +1,9 @@
 #ML ESTIMATOR FOR A BAYESIAN NETWORK OF DISCRETE VALUES################################################################
 require(ggm)
+
+test=TRUE
+
+if(!test) {
 args <- commandArgs(T)
 bayes_network_model=read.delim(args[1],header=T)
 Training_data<-read.delim(args[2],header=T)
@@ -7,8 +11,7 @@ file_name=(args[3])
 if(length(args)>3){
   scarcity_cutoff<-as.numeric(args[4])
   missing_identifier=args[5]
-}
-else{
+} else{
   scarcity_cutoff=30
   missing_identifier="*"
 }
@@ -22,84 +25,163 @@ Table_1=Bayes_ml_estimator(Training_data,bayes_network_model,scarcity_cutoff)
 Final_table=final_prob_table(Table_1,Training_data,scarcity_cutoff,missing_identifier,file_name)
 
 
-
-
-
-
-
-
-
-
-
-
-Bayes_ml_estimator<-function(data,bayes_network_model,scarcity_cutoff=30){
- if(!is.data.frame(data)){
-   cat('Ay-Caramba!!~!')
- }
-  if(ncol(data)!=ncol(bayes_network_model)){
-    cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
-   
- }
- ###top. sort begin###
- rownames(bayes_network_model)=colnames(bayes_network_model)
- hotdog2=bayes_network_model
- hotdog2[hotdog2>0]=0
- hotdog2[hotdog2<0]=1
- bayes_network_model=bayes_network_model[topOrder(hotdog2),topOrder(hotdog2)]
- #topological sort of BNM done
- table=list()
-  for(i in colnames(bayes_network_model)){
-    conditional_indices=which(bayes_network_model[,i]<0)
-    cNames=sort(-1*bayes_network_model[conditional_indices,i])
-    cNames=names(cNames)
-    table[[i]]=WRAP(data,i,cNames,scarcity_cutoff)
-  }
- return(table)
 }
 
 
 
 
-recursive_conditioning<-function(vector,conditional_columns,shit_so_far,conditions,possible_values,condition_values=c(),scarcity_cut_off,Data_scarcity){
-  if(is.na(conditional_columns)|is.null(condition_values)){#Tail condition
-    prob=c()
-    for(j in possible_values){#calculate probabilities
-      prob=c(prob,length(which(vector==j)))
+
+
+
+
+
+Bayes_ml_estimator<-
+  function(data,bayes_network_model,scarcity_cutoff=30){
+    if(!is.data.frame(data)){
+      cat('Ay-Caramba!!~!')
     }
-    shit_so_far=rbind(shit_so_far,c(conditions,prob,length(vector),Data_scarcity))
-    return(shit_so_far)#bind them then return them
-  }else{
-    if(is.data.frame(conditional_columns)){#if there are multiple conditional variables left
-      for(k in unlist(condition_values[1])){
-        conditioned_vector=vector[conditional_columns[,1]==k]
-        if(length(conditioned_vector)<=scarcity_cut_off){#switches Data scarcity value to T if there
-          Data_scarcity=TRUE
-        }
-        if(Data_scarcity){#If there is data scarcity, keep passing less conditions, but stop conditioning on them
-          remaining_conditions=conditional_columns[,2:ncol(conditional_columns)]
-          remaining_values=condition_values[2:length(condition_values)]
-          shit_so_far=recursive_conditioning(vector,remaining_conditions,shit_so_far,c(conditions,k),possible_values,remaining_values,scarcity_cut_off,Data_scarcity=TRUE)
-        }
-        else{
-        remaining_conditions=conditional_columns[conditional_columns[,1]==k , 2:ncol(conditional_columns)]
-        remaining_values=condition_values[2:length(condition_values)]
-        shit_so_far = recursive_conditioning(conditioned_vector,remaining_conditions,shit_so_far,c(conditions,k),possible_values,remaining_values,scarcity_cut_off,Data_scarcity=FALSE)
+    if(ncol(data)!=ncol(bayes_network_model)){
+      cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
+    }
+
+# topsort matrix
+    rownames(bayes_network_model)=colnames(bayes_network_model)
+    adj_matrix=bayes_network_model
+    adj_matrix[adj_matrix>0]=0
+    adj_matrix[adj_matrix<0]=1
+
+    bayes_network_model=bayes_network_model[topOrder(adj_matrix),topOrder(adj_matrix)]
+    table=list()
+    for(i in colnames(bayes_network_model)){
+      conditional_indices=which(bayes_network_model[,i]<0)
+      cNames=sort(-1*bayes_network_model[conditional_indices,i])
+      cNames=names(cNames)
+      table[[i]]=WRAP(data,i,cNames,scarcity_cutoff)
+}
+ return(table)
+}
+
+cartesian_condition = function( df        
+                              , on
+                              , colnames
+                              , scarcity_cutoff
+                              ) {
+# prep data frame
+  on <- df[,on]
+  df <- df[,colnames]
+
+  values = list()
+  for(colname in colnames) {
+    values[[colname]] <- levels(as.factor(df[, colname]))
+  }
+
+  lookup_table = expand.grid(values)
+  print("here")
+  apply( lookup_table, 1, function(row) {
+    last_matches = NA
+    for(colname in colnames) {
+      matches = which(df[,colname] == row[colname])
+
+      if(!is.na(last_matches)) { 
+        last_matches <- intersect(matches, last_matches)
+      } else {
+        last_matches = matches
+      }
+
+      if(length(matches) < scarcity_cutoff) {
+        break
+      }
+    }
+    print("wtf")
+    print(last_matches)
+  })
+
+}
+
+recursive_conditioning = 
+  function( vector
+          , conditional_columns
+          , shit_so_far
+          , conditions
+          , possible_values
+          , condition_values=c()
+          , scarcity_cut_off
+          , Data_scarcity) {
+
+# tail condition
+    if(is.na(conditional_columns) | is.null(condition_values)) {#Tail condition
+      prob = c()
+      for(j in possible_values){ #calculate probabilities
+        prob=c(prob, length(which(vector==j)))
+      }
+      shit_so_far = rbind( shit_so_far ,c( conditions,prob
+                                         , length(vector)
+                                         , Data_scarcity
+                                         ))
+      return(shit_so_far) #bind them then return them
+    } else {
+
+      if(is.data.frame(conditional_columns)){
+        #then there are multiple conditional variables left
+
+        for(k in unlist(condition_values[1])){
+          conditioned_vector = vector[conditional_columns[,1]==k]
+          if( length(conditioned_vector ) <= scarcity_cut_off ) {
+            #then data is scarce
+            Data_scarcity = TRUE
+          }
+
+          if(Data_scarcity){
+            #then keep passing less conditions, but stop conditioning on them
+            remaining_conditions = conditional_columns[,2:ncol(conditional_columns)]
+            remaining_values     = condition_values[2:length(condition_values)]
+            shit_so_far          = recursive_conditioning( vector
+                                                         , remaining_conditions
+                                                         , shit_so_far
+                                                         , c(conditions,k)
+                                                         , possible_values
+                                                         , remaining_values
+                                                         , scarcity_cut_off
+                                                         , Data_scarcity=TRUE)
+        } else {
+          # data is not scarce
+          remaining_conditions = conditional_columns[conditional_columns[,1]==k , 2:ncol(conditional_columns)]
+          remaining_values     = condition_values[2:length(condition_values)]
+          shit_so_far          = recursive_conditioning( conditioned_vector
+                                                       , remaining_conditions
+                                                       , shit_so_far
+                                                       , c(conditions,k)
+                                                       , possible_values
+                                                       , remaining_values
+                                                       , scarcity_cut_off
+                                                       , Data_scarcity=FALSE)
         }
       }
-    }else{
-      for(k in unlist(condition_values[1])){
-        conditioned_vector=vector[conditional_columns==k]
-        if(length(conditioned_vector)<=scarcity_cut_off|Data_scarcity){
-          shit_so_far = recursive_conditioning(vector,NA,shit_so_far,c(conditions,k),possible_values,scarcity_cut_off=scarcity_cut_off,Data_scarcity=TRUE)
-         }else{
-        shit_so_far = recursive_conditioning(conditioned_vector,NA,shit_so_far,c(conditions,k),possible_values,scarcity_cut_off=scarcity_cut_off,Data_scarcity=FALSE)  
+    } else {
+      for(k in unlist(condition_values[1])) {
+        # then there is only one condition left?
+        conditioned_vector = vector[conditional_columns==k]
+        if(length(conditioned_vector) <= scarcity_cut_off|Data_scarcity) {
+          shit_so_far = recursive_conditioning( vector
+                                              , NA
+                                              , shit_so_far
+                                              , c(conditions,k)
+                                              , possible_values
+                                              , scarcity_cut_off=scarcity_cut_off
+                                              , Data_scarcity=TRUE)
+        } else {
+          shit_so_far = recursive_conditioning( conditioned_vector
+                                              , NA
+                                              , shit_so_far
+                                              , c(conditions,k)
+                                              , possible_values
+                                              , scarcity_cut_off=scarcity_cut_off
+                                              , Data_scarcity=FALSE)  
         }
       }
-    
     }
   }
-  return(shit_so_far)
-  #
+  shit_so_far
 }
 WRAP<-function(data,index_of_interest,cNames,scarcity_cut_off){
   vector=data[,index_of_interest]
@@ -240,10 +322,11 @@ Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identi
   return(prob_table)
 }
 
-
+if(!test) {
 final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RData"){
   for(i in 1:length(prob_list)){
     prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
   }
   save(prob_list,file=filename)
+}
 }
