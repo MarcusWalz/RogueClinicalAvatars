@@ -12,7 +12,7 @@ Files
   - `unit/` unit tests for various scripts (currently just `stable_dose.R`)
 - `simulator.R` the actual simulator
 - `initial_dose.R` initial dosing formulas
-- `protocols.R` dosing protocols
+- `maintenance_protocols.R` dosing protocols
 - `run_sim.R` simulation execution script.
 
 
@@ -37,7 +37,7 @@ TODO
   ```
 
 
-- Modify `protocols.R` s.t. each protocol so that:
+- Modify `maintenance_protocols.R` s.t. each protocol so that:
 
   All protocols end in `_protocol` so we can safely fetch a protocol using
   `ls()` and `get()`.
@@ -56,6 +56,6 @@ TODO
   ```
 
   This way we can avoid that huge if/else statement in `simulator.R`
-  and keep all protocol specific logic inside `protocols.R`.
+  and keep all protocol specific logic inside `maintenance_protocols.R`.
 
 - Do something similar for `initial_dose.R`.
