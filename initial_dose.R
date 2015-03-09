@@ -16,9 +16,9 @@
 ### Height:   "HEIGHT" takes a numeric value representing the height of patient. see units note ###
 ### Weight:   "WEIGHT" takes a numeric value representing the weight of patient. see units note ### 
 ### CYP2C9:   "CYP2C9" takes a value of *1/*1, *1/*2, *1/*3, *2/*2, *2/*3, *3/*3, or "Unknown"  ###
-### VKORC1.1639: "VKORC1G" takes a value of "A/A", "A/G", "G/G", or "Unknown"                   ###
+### VKORC1.1639: "VKORC1G" takes a value of "A/A", "G/A", "G/G", or "Unknown"                   ###
 ### VKORC1.1173: "VKORC1T" takes a value of C/C, C/T, T/T, or "Unknown"                         ###
-### Enzyme inducer status: "ENZ" takes a value of Y or N                                        ### 
+### ENZYME inducer status: "ENZYME" takes a value of Y or N                                        ### 
 ### Amiodarone status: "AMI" takes a value of Y or N                                            ###
 ### Gender:   "GENDER" takes a value of Y or N                                                  ###
 ### Smoker:   "SMOKER" takes a value of Y or N                                                  ### 
@@ -26,8 +26,9 @@
 ### Target INR: "TINR" takes a numeric value, usually 2.5 or 3                                  ###
 ###################################################################################################
 ###################################################################################################
-
-
+#edit: 11/21/2014 added AHC initial dose,BMI, changed Enzyme inducer variable name from ENZ to ENZYME -JDW
+#edit: 1/30/2015 noticed and fixed an inconsistency with the variable values of VKORC1G. VKORC1G switched from taking values of A/A A/G G/G to A/A G/A G/G to remain consistent
+#					with Hamber2007.R code. 
 initial_dose <- function(avatars, dosing_algorithm, units="English"){
 
 ##### Units conversion
@@ -40,8 +41,8 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
   }
 
 ##### Create an array to hold calculated initial doses 
-  InitialDose=array(0,dim=c(nrow(avatars),2))
-  colnames(InitialDose)<-c("InitialDose","BSA")
+  InitialDose=array(0,dim=c(nrow(avatars),3))
+  colnames(InitialDose)<-c("InitialDose","BSA","BMI")
   
 ##### BSA Calculation
   BSA=((avatars$WEIGHT*unitw)^.425*(avatars$HEIGHT*unith)^.725*.007184)#BSA is calculated based
@@ -49,16 +50,27 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
   #Citation: DuBois D, Du"Bois DF. A formula to estimate the approximate surface area if 
     #height and weight be known.  Arch Int Med 1916;17:863-71.
   InitialDose[,2]<-BSA
+  BMI<-(avatars$WEIGHT*unitw/(avatars$HEIGHT*unith/100)^2)
+  InitialDose[,3]<-BMI
   
   ############ Dosing Algorithms Start Here #############
+  
+  ###AHC fixed initial dosing derived from AHC provided ambulatory anticoagulation guideline.
+
+  if (dosing_algorithm == "AHC"){    
+     DOSE=array(0,dim=c(nrow(avatars)))
+     #DOSE <- ifelse(avatars$condition=="condition_1", 10, 5)
+     DOSE <- ifelse(avatars$AGE < 65, 10, 5)
+     InitialDose <- DOSE
+     avatars<-cbind(avatars,InitialDose)  
+     #View(avatars)
+  }
   
   ### PGx initial dosing algorithm derived from COAG paper (PG-COAG). According to the paper
   ### this is used to calculate daily dosage for days 1, 2, and 3.
   ### Citation: Kimmel, Stephen E., Benjamin French, Scott E. Kasner, Julie A. Johnson, Jeffrey L. Anderson, Brian F. Gage, Yves D. Rosenberg et al."A pharmacogenetic versus a clinical algorithm for warfarin dosing." New England Journal of Medicine 369, no. 24 (2013): 2283-2293.
 
-
-  
-  if(dosing_algorithm=="pginitial_COAG"){
+  else if(dosing_algorithm=="pginitial_COAG"){
   CYPdummy3<-avatars$CYP2C9
   CYPdummy2<-avatars$CYP2C9
   VKORdummy<-avatars$VKORC1G
@@ -68,7 +80,7 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
   levels(CYPdummy2)<-list(absent=c("*1/*1","*1/*3","*3/*3"),#takes integer value of 1
                           hetero=c("*1/*2","*2/*3"),		#takes integer value of 2
                           homo=c("*2/*2"))					#takes integer value of 3
-  levels(VKORdummy)<-list(GG="G/G",AG="A/G",AA="A/A")       #takes integer value of 1,2, and 3 respectively                      
+  levels(VKORdummy)<-list(GG="G/G",GA="G/A",AA="A/A")       #takes integer value of 1,2, and 3 respectively                      
   InitialDose[,1]=round(exp(0.9751 
                             -0.2066*(as.integer(CYPdummy2)-1)
                             -0.4008*(as.integer(CYPdummy3)-1)
@@ -157,7 +169,7 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
                            -0.2523*(avatars$AGE%/%10)#converting years to decades 
                            +0.0089*avatars$HEIGHT*unith 
                            +0.0124*avatars$WEIGHT*unitw
-                           -0.8410*(avatars$VKORC1G=="A/G")#VKORC1- rs9923231
+                           -0.8410*(avatars$VKORC1G=="G/A")#VKORC1- rs9923231
                            -1.6901*(avatars$VKORC1G=="A/A")
 						   -0.4199*(avatars$VKORC1G=="Unknown")
                            -0.5202*(avatars$CYP2C9=="*1/*2")
@@ -169,7 +181,7 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
                            +0.0821*(avatars$RACE=="Asian")
                            -0.2953*(avatars$RACE=="Black or African American")
                            -0.1661*(avatars$RACE=="Unknown")
-                           +1.1889*(avatars$ENZ=="Y")
+                           +1.1889*(avatars$ENZYME=="Y")
                            -0.6427*(avatars$AMI=="Y")
                            -0.3468*(avatars$AMI=="Unknown"))^2)/7,2)
   avatars<-cbind(avatars,InitialDose)
@@ -186,13 +198,13 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
                            -0.2523*(avatars$AGE%/%10)#converting years to decades  
                            +0.0089*avatars$HEIGHT*unith 
                            +0.0124*avatars$WEIGHT*unitw
-                           -0.8410*(avatars$VKORC1G=="A/G")#VKORC1- rs9923231
+                           -0.8410*(avatars$VKORC1G=="G/A")#VKORC1- rs9923231
                            -1.6901*(avatars$VKORC1G=="A/A")
 						   -0.4199*(avatars$VKORC1G=="Unknown")
                            +0.0821*(avatars$RACE=="Asian")
                            -0.2953*(avatars$RACE=="Black or African American")
                            -0.1661*(avatars$RACE=="Unknown")
-                           +1.1889*(avatars$ENZ=="Y")
+                           +1.1889*(avatars$ENZYME=="Y")
                            -0.6427*(avatars$AMI=="Y")
                            -0.3468*(avatars$AMI=="Unknown"))^2)/7,2)
     avatars<-cbind(avatars,InitialDose)
@@ -209,7 +221,7 @@ else if(dosing_algorithm=="pginitial_GAGE"){
   InitialDose[,1]<-round(
     exp(0.9751+0.423*BSA
         -0.00745*avatars$AGE
-        -0.3238*(avatars$VKORC1G=="A/G")#VKOR3673G
+        -0.3238*(avatars$VKORC1G=="G/A")#VKOR3673G
         -0.4008*(avatars$CYP2C9=="*1/*3")
         -0.4008*(avatars$CYP2C9=="*2/*3")
         -0.4008*2*(avatars$CYP2C9=="*3/*3")
@@ -252,7 +264,7 @@ else if(dosing_algorithm=="pginitial_GAGE"){
                                        -0.2614*(avatars$AGE%/%10)#converting years to decades
                                        +0.0087*unith*avatars$HEIGHT
                                        +0.0128*unitw*avatars$WEIGHT
-                                       -0.8677*(avatars$VKORC1G=="A/G")#rs9923231
+                                       -0.8677*(avatars$VKORC1G=="G/A")#rs9923231
                                        -1.6974*(avatars$VKORC1G=="A/A")
                                        -0.4854*(avatars$VKORC1G=="Unknown")
                                        -0.5211*(avatars$CYP2C9=="*1/*2")
@@ -260,11 +272,12 @@ else if(dosing_algorithm=="pginitial_GAGE"){
                                        -1.0616*(avatars$CYP2C9=="*2/*2") 
                                        -1.9206*(avatars$CYP2C9=="*2/*3")
                                        -2.3312*(avatars$CYP2C9=="*3/*3")
+
                                        -0.2188*(avatars$CYP2C9=="Unknown")
                                        -0.1092*(avatars$RACE=="Asian") 
                                        -0.2760*(avatars$RACE=="Black or African American")
                                        -1.032*(avatars$RACE=="Unknown")#Unknown: Missing or Mixed race
-                                       +1.1816*(avatars$ENZ=="Y")
+                                       +1.1816*(avatars$ENZYME=="Y")
                                        -0.5503*(avatars$AMI=="Y"))^2)/7,2)
     
     avatars<-cbind(avatars,InitialDose)
@@ -285,7 +298,7 @@ else if(dosing_algorithm=="pginitial_GAGE"){
         -0.6752*(avatars$RACE=="Asian")
         +0.4060*(avatars$RACE=="Black or African American")
         +0.0443*(avatars$RACE=="Unknown")#Unknown: Missing of Mixed race
-        +1.2799*(avatars$ENZ=="Y")
+        +1.2799*(avatars$ENZYME=="Y")
         -0.5695*(avatars$AMI=="Y"))^2)/7
   
   avatars=cbind(avatars,InitialDose)
@@ -299,11 +312,11 @@ else if(dosing_algorithm=="pginitial_GAGE"){
     InitialDose[,1]<- 2 * 5
     avatars<-cbind(avatars,InitialDose)  
   } else if (dosing_algorithm=="STD_EU_PACT"){
-	D<-round(((		   				             5.6044 
+    	D<-round(((		            5.6044 
                                        -0.02614*(avatars$AGE)
                                        +0.0087*unith*avatars$HEIGHT
                                        +0.0128*unitw*avatars$WEIGHT
-                                       -0.8677*(avatars$VKORC1G=="A/G")#rs9923231
+                                       -0.8677*(avatars$VKORC1G=="G/A")#rs9923231
                                        -1.6974*(avatars$VKORC1G=="A/A")
                                        -0.5211*(avatars$CYP2C9=="*1/*2")
                                        -0.9357*(avatars$CYP2C9=="*1/*3")
