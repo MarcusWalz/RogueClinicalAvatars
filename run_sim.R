@@ -41,7 +41,7 @@ randomValues = array(round(abs(rnorm(nrow(avatars)*numReplicates)*nrow(avatars)
                                   *numReplicates)), dim=c(nrow(avatars), numReplicates))
 # rand_sub = randomValues[from:to,]
 av_out=processAvatar(avatars=avatars, protocol=opts$protocol, initialDose=opts$initial, 
-                     numDaysToSimulate=90, maxDose=15, numReplicates=1,
+                     numDaysToSimulate=opts$days, maxDose=15, numReplicates=1,
                      maxTime=24, rseed=randomValues)
 
 write.table(av_out, output_file, sep="\t")

@@ -36,7 +36,8 @@ TODO
         )
   ```
 
-
+- Modify `simulator.R` so `process_avatar` handles 1 avatar at a time and
+  `process_avatars` maps process_avatars over many.
 - Modify `maintenance_protocols.R` s.t. each protocol so that:
 
   All protocols end in `_protocol` so we can safely fetch a protocol using
