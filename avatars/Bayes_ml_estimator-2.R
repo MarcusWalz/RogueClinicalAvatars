@@ -5,8 +5,10 @@ test=TRUE
 
 if(!test) {
 args <- commandArgs(T)
-bayes_network_model=read.delim(args[1],header=T)
-Training_data<-read.delim(args[2],header=T)
+bayes_network_model=as.matrix(read.delim(args[1],header=T))
+
+Training_data<-as.data.frame(read.delim(args[2],header=T))
+
 file_name=(args[3])
 if(length(args)>3){
   scarcity_cutoff<-as.numeric(args[4])
@@ -20,9 +22,6 @@ dummy_dag=bayes_network_model
 rownames(dummy_dag)=colnames(dummy_dag)
 dummy_dag[dummy_dag>0]=0
 dummy_dag[dummy_dag<0]=1
-bayes_network_model=bayes_network_model[topOrder(dummy_dag),topOrder(dummy_dag)]
-Table_1=Bayes_ml_estimator(Training_data,bayes_network_model,scarcity_cutoff)
-Final_table=final_prob_table(Table_1,Training_data,scarcity_cutoff,missing_identifier,file_name)
 
 
 }
@@ -61,171 +60,69 @@ Bayes_ml_estimator<-
  return(table)
 }
 
-cartesian_condition = function( df        
-                              , on
-                              , colnames
+cartesian_condition = function( df      # data frame
+                              , on_col  # column to compute
+                              , c_names # parent columns from most to least important
                               , scarcity_cutoff
                               ) {
-# prep data frame
-  on <- df[,on]
-  df <- df[,colnames]
+  on = df[,on_col]
+  df = as.data.frame(df[,c_names])
+  colnames(df) <- c_names
 
   values = list()
-  for(colname in colnames) {
-    values[[colname]] <- levels(as.factor(df[, colname]))
+  for(colname in c_names) {
+    values[[colname]] <- levels(as.factor(df[,colname]))
   }
+
+  on_values = levels(as.factor(on))
+  print(on_values)
 
   lookup_table = expand.grid(values)
-  print("here")
-  apply( lookup_table, 1, function(row) {
-    last_matches = NA
-    for(colname in colnames) {
+
+  print(lookup_table)
+
+  scarcity = c()
+  p_table=t(apply( lookup_table, 1, function(row) {
+    last_matches = NULL
+    for(colname in c_names) {
       matches = which(df[,colname] == row[colname])
 
-      if(!is.na(last_matches)) { 
-        last_matches <- intersect(matches, last_matches)
-      } else {
+      if(is.null(last_matches)) { 
+        # check for scarcity
+        if(length(matches) < scarcity_cutoff) {
+          break
+        } else {
         last_matches = matches
-      }
-
-      if(length(matches) < scarcity_cutoff) {
-        break
-      }
-    }
-    print("wtf")
-    print(last_matches)
-  })
-
-}
-
-recursive_conditioning = 
-  function( vector
-          , conditional_columns
-          , shit_so_far
-          , conditions
-          , possible_values
-          , condition_values=c()
-          , scarcity_cut_off
-          , Data_scarcity) {
-
-# tail condition
-    if(is.na(conditional_columns) | is.null(condition_values)) {#Tail condition
-      prob = c()
-      for(j in possible_values){ #calculate probabilities
-        prob=c(prob, length(which(vector==j)))
-      }
-      shit_so_far = rbind( shit_so_far ,c( conditions,prob
-                                         , length(vector)
-                                         , Data_scarcity
-                                         ))
-      return(shit_so_far) #bind them then return them
-    } else {
-
-      if(is.data.frame(conditional_columns)){
-        #then there are multiple conditional variables left
-
-        for(k in unlist(condition_values[1])){
-          conditioned_vector = vector[conditional_columns[,1]==k]
-          if( length(conditioned_vector ) <= scarcity_cut_off ) {
-            #then data is scarce
-            Data_scarcity = TRUE
-          }
-
-          if(Data_scarcity){
-            #then keep passing less conditions, but stop conditioning on them
-            remaining_conditions = conditional_columns[,2:ncol(conditional_columns)]
-            remaining_values     = condition_values[2:length(condition_values)]
-            shit_so_far          = recursive_conditioning( vector
-                                                         , remaining_conditions
-                                                         , shit_so_far
-                                                         , c(conditions,k)
-                                                         , possible_values
-                                                         , remaining_values
-                                                         , scarcity_cut_off
-                                                         , Data_scarcity=TRUE)
-        } else {
-          # data is not scarce
-          remaining_conditions = conditional_columns[conditional_columns[,1]==k , 2:ncol(conditional_columns)]
-          remaining_values     = condition_values[2:length(condition_values)]
-          shit_so_far          = recursive_conditioning( conditioned_vector
-                                                       , remaining_conditions
-                                                       , shit_so_far
-                                                       , c(conditions,k)
-                                                       , possible_values
-                                                       , remaining_values
-                                                       , scarcity_cut_off
-                                                       , Data_scarcity=FALSE)
         }
-      }
-    } else {
-      for(k in unlist(condition_values[1])) {
-        # then there is only one condition left?
-        conditioned_vector = vector[conditional_columns==k]
-        if(length(conditioned_vector) <= scarcity_cut_off|Data_scarcity) {
-          shit_so_far = recursive_conditioning( vector
-                                              , NA
-                                              , shit_so_far
-                                              , c(conditions,k)
-                                              , possible_values
-                                              , scarcity_cut_off=scarcity_cut_off
-                                              , Data_scarcity=TRUE)
+      } else {
+        x = intersect(matches, last_matches)
+        # check for scarcity
+        if(length(x) < scarcity_cutoff) {
+          break
         } else {
-          shit_so_far = recursive_conditioning( conditioned_vector
-                                              , NA
-                                              , shit_so_far
-                                              , c(conditions,k)
-                                              , possible_values
-                                              , scarcity_cut_off=scarcity_cut_off
-                                              , Data_scarcity=FALSE)  
+          last_matches = x
         }
       }
     }
-  }
-  shit_so_far
-}
-WRAP<-function(data,index_of_interest,cNames,scarcity_cut_off){
-  vector=data[,index_of_interest]
-  possible_values=levels(as.factor(vector))
-  if(!is.null(cNames)){
-    conditions=data[,cNames]
-    condition_values=list()
-    if(is.factor(conditions)){
-      condition_values[[1]]=levels(conditions)
-      number_of_conditions=1
-    }else{
-      for(i in 1:ncol(conditions)){
-        condition_values[[i]]=levels(as.factor(conditions[,i]))
-      }
-      number_of_conditions=ncol(conditions)
+    if(is.null(last_matches)) {
+      scarcity = append(scarcity, TRUE)
+      array(NA, length(on_values))
+    } else {
+      scarcity = append(scarcity, FALSE)
+      sapply(on_values, function (value)
+        { sum(on[last_matches] == value) }
+      ) 
     }
-  } else{
-    conditions=NA
-    condition_values=c()
-    number_of_conditions=0
-}##END IF CONDITIONS EXIST IF/ELSE
 
-  shit_so_far=recursive_conditioning(vector,conditions,c(),c(),possible_values,condition_values,scarcity_cut_off,Data_scarcity=F)
-  if(number_of_conditions!=0){
-    condition_set=as.data.frame(shit_so_far[,1:number_of_conditions],stringsAsFactors=F)
-    colnames(condition_set)=cNames
-  } else{
-    condition_set=data.frame()
-  }
-                                 
-  probs=as.data.frame((shit_so_far[,(number_of_conditions+1):(ncol(shit_so_far)-2)]))
-  if(number_of_conditions==0){
-    probs=t(probs)
-    
-  }
-  colnames(probs)=possible_values
-  return(list("Conditions"=condition_set
-              ,"Probabilities"=as.data.frame(probs,stringsAsFactors=F)
-              ,"Sample Size"=shit_so_far[,ncol(shit_so_far)-1]
-              ,"Data Scarcity"=shit_so_far[,ncol(shit_so_far)]
-              ))
+  }))
+
+  colnames(p_table) <- on_values
+
+  list(field = on_col, conditions = lookup_table, prob_table=p_table, scarcity = scarcity)
 }
 
 
+WRAP = cartesian_condition
 
 Missing_data_estimator=function(data,project_site,missing_prob_table){
   conditions=(missing_prob_table$Conditions)
@@ -255,7 +152,7 @@ Missing_data_estimator=function(data,project_site,missing_prob_table){
       #finding the probabilities of subset c conditioned on cset.
       for(l in 1:ncol(subset_p)){
         probs=c(probs,mean(as.numeric(as.character(unlist(subset_p[indices,l])))))
-        #doing the column means of the probabilities and creating a vector with them
+        #doing the column means of the probabilities and creating a column with them
       }
       probs_total=rbind(probs_total,probs)#jam em together for posterity
       index=which(sapply(ordered_subset[k]==conditions[missing_data,-pro_index],sum)==ncol(ordered_subset))
@@ -282,7 +179,7 @@ Project_site_map=function(project_site,data,threshold){
   }
   totals=rowSums(probabilities2)
   probabilities2=probabilities2/totals
-  #Just converting some garbage from factors to vectors
+  #Just converting some garbage from factors to columns
   thing=probabilities2[project_site,]#select project site pop. break down
   probabilities2=as.matrix(probabilities2)[-project_site,]#select everything else
   differences=c()
@@ -297,6 +194,7 @@ Project_site_map=function(project_site,data,threshold){
 }
 
 Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identifier="*",file_name){
+  print("what?")
   probs=prob_table$Probabilities
   conditions=prob_table$Conditions
   project_sites=levels(as.factor(data$PRO_SITE))
@@ -322,11 +220,10 @@ Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identi
   return(prob_table)
 }
 
-if(!test) {
-final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RData"){
-  for(i in 1:length(prob_list)){
-    prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
-  }
-  save(prob_list,file=filename)
-}
-}
+# if(!test) {
+# final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RData"){
+#  for(i in 1:length(prob_list)){
+#    prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
+#  }
+#  save(prob_list,file=filename)
+#}
