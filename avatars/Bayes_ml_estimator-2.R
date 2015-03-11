@@ -60,12 +60,40 @@ Bayes_ml_estimator<-
  return(table)
 }
 
+# scarcity calculators: RETURN true if cutoff is reached
+
+# cutoff when values are less than
+cutoff_by_matches = function(n) { 
+  function(matches) {
+    length(matches) < n
+  }
+}
+
+# cutoff 
+cutoff_ignore_missing = function(n, missing_symbol="*") {
+  function(matches) {
+    sum(matches != missing_symbol) < n
+  }
+
+}
+
+
 cartesian_condition = function( df      # data frame
                               , on_col  # column to compute
                               , c_names # parent columns from most to least important
-                              , scarcity_cutoff
+                              , scarcity_cutoff # scarcity cutoff. Either a number i
+                                                # or derived from a function above.
                               ) {
+
+  # set the scarcity cutoff if scarcity_cutoff is numeric
+  if(is.numeric(scarcity_cutoff)) {
+    n = scarcity_cutoff
+    scarcity_cutoff = cutoff_by_matches(n)
+  }
+
   on = df[,on_col]
+  on_values = levels(as.factor(on))
+
   df = as.data.frame(df[,c_names])
   colnames(df) <- c_names
 
@@ -74,48 +102,44 @@ cartesian_condition = function( df      # data frame
     values[[colname]] <- levels(as.factor(df[,colname]))
   }
 
-  on_values = levels(as.factor(on))
-  print(on_values)
-
   lookup_table = expand.grid(values)
 
   print(lookup_table)
 
-  scarcity = c()
-  p_table=t(apply( lookup_table, 1, function(row) {
-    last_matches = NULL
+  # compute the prob table
+  find_prob = function(row) {
+    last_matches = 1:length(on) 
+    is_scarce = FALSE
+    # subset column-by-column until data scarcity is reached
     for(colname in c_names) {
       matches = which(df[,colname] == row[colname])
 
-      if(is.null(last_matches)) { 
-        # check for scarcity
-        if(length(matches) < scarcity_cutoff) {
-          break
-        } else {
-        last_matches = matches
-        }
+      x = intersect(matches, last_matches)
+      # check for scarcity
+      if(length(x) == 0 || scarcity_cutoff(on[x])) {
+        is_scarce = TRUE
+        break
       } else {
-        x = intersect(matches, last_matches)
-        # check for scarcity
-        if(length(x) < scarcity_cutoff) {
-          break
-        } else {
-          last_matches = x
-        }
+        last_matches = x
       }
     }
-    if(is.null(last_matches)) {
-      scarcity = append(scarcity, TRUE)
-      array(NA, length(on_values))
-    } else {
-      scarcity = append(scarcity, FALSE)
-      sapply(on_values, function (value)
-        { sum(on[last_matches] == value) }
-      ) 
-    }
-
-  }))
-
+    list( p_table =
+           sapply(on_values, function (value)
+           { sum(on[last_matches] == value) }
+        )
+        , scarcity = is_scarce
+        )
+  }
+  
+  if(length(c_names) == 0) {
+    out=find_prob(NA) # ROW only used in inner loop
+    p_table  = t(out$p_table)
+    scarcity = out$scarcity 
+  } else {
+    out=apply(lookup_table, 1, find_prob)
+    p_table  = t(sapply(out, function(x) x$p_table))
+    scarcity = sapply(out, function(x) x$scarcity)
+  }
   colnames(p_table) <- on_values
 
   list(field = on_col, conditions = lookup_table, prob_table=p_table, scarcity = scarcity)
