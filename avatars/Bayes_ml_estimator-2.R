@@ -77,6 +77,78 @@ cutoff_ignore_missing = function(n, missing_symbol="*") {
 
 }
 
+find_prob = function(row, df, on, c_names, scarcity_cutoff,on_values) {
+  last_matches = 1:length(on) 
+  is_scarce = FALSE
+  # subset column-by-column until data scarcity is reached
+  for(colname in c_names) {
+    matches = which(df[,colname] == row[colname])
+
+    x = intersect(matches, last_matches)
+    # check for scarcity
+    if(scarcity_cutoff(on[x])) {
+      is_scarce = TRUE
+      break
+    } else {
+      last_matches = x
+    }
+  }
+  list( p_table =
+         sapply(on_values, function (value)
+         { sum(on[last_matches] == value) }
+      )
+      , scarcity = is_scarce
+      )
+}
+
+# TEST STUFF
+# TODO put somewhere else!!!
+
+stop = function(message, truth) {
+  if(!truth) {
+    print(message)
+    #exit()
+  }
+}
+
+test_scarcity_cutoff_0 = cutoff_by_matches(0)
+test_scarcity_cutoff_1 = cutoff_by_matches(1)
+
+test_row_1 = c(0, 0)
+test_row_2 = c(0, 1)
+test_row_1_ = list(a=0, b=0)
+test_row_2_ = list(a=0, b=1)
+test_colnames = c("a", "b")
+
+test_df = t(replicate(5,test_row_1))
+colnames(test_df) <- test_colnames
+test_df_2 = rbind(test_df, as.data.frame(test_row_2_))
+
+
+
+
+# data scarcity triggered
+test_1 = function( ) {
+  out = find_prob(test_row_1_, test_df, c(0,0,0,0,0), test_colnames, cutoff_by_matches(0), c(0,1))
+  stop("test_1: scarcity should be true", out$scarcity == FALSE)
+  out = find_prob(test_row_2_, test_df, c(0,0,0,0,0), test_colnames, cutoff_by_matches(1), c(0,1))
+  stop("test_1.a: scarcity should be false", out$scarcity == TRUE)
+}
+
+# histogram is correct
+test_2 = function( ) {
+  out = find_prob(test_row_1_, test_df, c(0,1,1,1000,0), test_colnames, cutoff_by_matches(0), c(0,1,2))
+  stop("test_2: histogram test 0", out$p_table[1] == 2)
+  stop("test_2: histogram test 1", out$p_table[2] == 2)
+  stop("test_2: histogram test 2", out$p_table[3] == 0)
+}
+# edge prune
+test_3 = function( ) {
+  out = find_prob(test_row_2_, test_df_2, c(0,0,0,0,0,1), test_colnames, cutoff_by_matches(2), c(0,1,2))
+  stop("test_3: prune test 0", out$scarcity == T)
+  stop("test_3: prune test 1", out$p_table[1] == 5)
+  stop("test_3: prune test 2", out$p_table[2] == 1)
+}
 
 cartesian_condition = function( df      # data frame
                               , on_col  # column to compute
@@ -97,6 +169,7 @@ cartesian_condition = function( df      # data frame
   df = as.data.frame(df[,c_names])
   colnames(df) <- c_names
 
+  # construct the lookup table by taking the cartesian product
   values = list()
   for(colname in c_names) {
     values[[colname]] <- levels(as.factor(df[,colname]))
@@ -104,39 +177,18 @@ cartesian_condition = function( df      # data frame
 
   lookup_table = expand.grid(values)
 
-  print(lookup_table)
-
   # compute the prob table
-  find_prob = function(row) {
-    last_matches = 1:length(on) 
-    is_scarce = FALSE
-    # subset column-by-column until data scarcity is reached
-    for(colname in c_names) {
-      matches = which(df[,colname] == row[colname])
 
-      x = intersect(matches, last_matches)
-      # check for scarcity
-      if(length(x) == 0 || scarcity_cutoff(on[x])) {
-        is_scarce = TRUE
-        break
-      } else {
-        last_matches = x
-      }
-    }
-    list( p_table =
-           sapply(on_values, function (value)
-           { sum(on[last_matches] == value) }
-        )
-        , scarcity = is_scarce
-        )
+  find_prob_inner = function(row) {
+    find_prob(row, df, on, c_names, scarcity_cutoff, on_values)
   }
   
   if(length(c_names) == 0) {
-    out=find_prob(NA) # ROW only used in inner loop
+    out=find_prob_inner(NA) # ROW only used in inner loop
     p_table  = t(out$p_table)
     scarcity = out$scarcity 
   } else {
-    out=apply(lookup_table, 1, find_prob)
+    out=apply(lookup_table, 1, find_prob_inner)
     p_table  = t(sapply(out, function(x) x$p_table))
     scarcity = sapply(out, function(x) x$scarcity)
   }
