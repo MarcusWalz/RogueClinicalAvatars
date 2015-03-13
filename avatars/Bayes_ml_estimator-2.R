@@ -17,46 +17,42 @@ if(length(args)>3){
   scarcity_cutoff=30
   missing_identifier="*"
 }
-rownames(bayes_network_model)=colnames(bayes_network_model)
-dummy_dag=bayes_network_model
-rownames(dummy_dag)=colnames(dummy_dag)
-dummy_dag[dummy_dag>0]=0
-dummy_dag[dummy_dag<0]=1
+
+  rownames(bayes_network_model)=colnames(bayes_network_model)
+  dummy_dag=bayes_network_model
+
+  rownames(dummy_dag)=colnames(dummy_dag)
+  dummy_dag[dummy_dag>0]=0
+  dummy_dag[dummy_dag<0]=1
 
 
 }
-
-
-
-
-
-
-
-
 
 Bayes_ml_estimator<-
-  function(data,bayes_network_model,scarcity_cutoff=30){
-    if(!is.data.frame(data)){
-      cat('Ay-Caramba!!~!')
-    }
-    if(ncol(data)!=ncol(bayes_network_model)){
-      cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
-    }
+function(data,bayes_network_model,scarcity_cutoff=30){
+  if(!is.data.frame(data)){
+    cat('Ay-Caramba!!~!')
+  }
+  if(ncol(data)!=ncol(bayes_network_model)){
+    cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
+  }
 
 # topsort matrix
-    rownames(bayes_network_model)=colnames(bayes_network_model)
-    adj_matrix=bayes_network_model
-    adj_matrix[adj_matrix>0]=0
-    adj_matrix[adj_matrix<0]=1
+  rownames(bayes_network_model)=colnames(bayes_network_model)
+  adj_matrix=bayes_network_model
+  adj_matrix[adj_matrix>0]=0
+  adj_matrix[adj_matrix<0]=1
 
-    bayes_network_model=bayes_network_model[topOrder(adj_matrix),topOrder(adj_matrix)]
-    table=list()
-    for(i in colnames(bayes_network_model)){
-      conditional_indices=which(bayes_network_model[,i]<0)
-      cNames=sort(-1*bayes_network_model[conditional_indices,i])
-      cNames=names(cNames)
-      table[[i]]=WRAP(data,i,cNames,scarcity_cutoff)
-}
+  bayes_network_model=bayes_network_model[topOrder(adj_matrix),topOrder(adj_matrix)]
+
+# consturct table
+  table=list()
+  for(i in colnames(bayes_network_model)){
+    conditional_indices=which(bayes_network_model[,i]<0)
+    cNames=sort(-1*bayes_network_model[conditional_indices,i])
+    cNames=names(cNames)
+    table[[i]]=WRAP(data,i,cNames,scarcity_cutoff)
+  }
  return(table)
 }
 
@@ -194,7 +190,7 @@ cartesian_condition = function( df      # data frame
   }
   colnames(p_table) <- on_values
 
-  list(field = on_col, conditions = lookup_table, prob_table=p_table, scarcity = scarcity)
+  list(field = on_col, Conditions = lookup_table, Probabilities=p_table, scarcity = scarcity)
 }
 
 
@@ -297,7 +293,7 @@ Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identi
 }
 
 # if(!test) {
-# final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RData"){
+# final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RDeata"){
 #  for(i in 1:length(prob_list)){
 #    prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
 #  }
