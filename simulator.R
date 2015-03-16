@@ -24,8 +24,16 @@ source("maintenance_protocols.R")
 source("initial_dose.R")
 source("job.distributor.R")
 
-my_av = read.table("data_semifinal.txt", sep=" ", header=T)[1:100,]
+my_av = read.table("data_semifinal.txt", sep=" ", header=T)[1:1000,]
 my_av$ENZYME <- "Y"
+
+my_sim =
+  list ( days = 90
+       , max_dose = 100
+       , max_time = 24
+       , protocol = "ahc_clinical"
+       , initial_dose  = "pginitial_IWPC"
+       )
 
 process_avatars = function( avatars
                           , simulations
@@ -179,6 +187,8 @@ list( avatar     = avatar
       , sim_out    = sim_out
       )
 }
+
+process_avatars(my_av, my_sim)
 
 ###### Note: max_time arguement is defined based on the adopted PK/PD model. So, since Hamberg PK/PD
 ###### model is based on a 24-hr time period, we decided to make argument "max_time" constant "24".
