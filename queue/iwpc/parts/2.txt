@@ -1,0 +1,10 @@
+"GENDER"	"RACE"	"AGE"	"HEIGHT"	"WEIGHT"	"PRO_SITE"	"INDICATION"	"DVT"	"DIABETES"	"VALVE_REP"	"AMI"	"SMOKER"	"ASPRIN"	"TYLENOL"	"FLUVNSTNTIN"	"ENZYME"	"TINR"	"CYP2C9"	"VKORC1G"	"VKORC1T"	"ID"
+"300"	"M"	"Asian"	71	130.8	28.8	"C"	"E"	"N"	"N"	"Y"	"N"	"N"	"N"	"N"	"N"	"N"	2.1	"*1/*1"	"A/G"	"C/T"	300
+"301"	"M"	"White"	55	179.4	28.8	"T"	"D"	"N"	"N"	"N"	"N"	"N"	"Y"	"N"	"N"	"N"	2.5	"*1/*1"	"G/G"	"C/C"	301
+"302"	"M"	"Asian"	65	158.8	28.8	"C"	"E"	"N"	"N"	"Y"	"N"	"N"	"Y"	"Y"	"N"	"N"	2.5	"*1/*1"	"A/A"	"T/T"	302
+"303"	"M"	"White"	82	166	28.8	"A"	"H"	"N"	"N"	"N"	"N"	"N"	"Y"	"N"	"N"	"N"	3	"*1/*2"	"G/G"	"C/C"	303
+"304"	"M"	"Asian"	66	162.3	28.9	"C"	"E"	"N"	"N"	"Y"	"N"	"Y"	"N"	"N"	"N"	"N"	2.9	"*1/*1"	"A/G"	"C/T"	304
+"305"	"M"	"Asian"	23	164.3	28.9	"C"	"E"	"N"	"N"	"Y"	"N"	"N"	"N"	"N"	"N"	"N"	2.5	"*1/*1"	"A/G"	"C/T"	305
+"306"	"F"	"Unknown"	60	162	28.9	"I"	"B"	"Y"	"N"	"N"	"N"	"N"	"Y"	"N"	"N"	"N"	2.5	"*1/*1"	"A/G"	"C/T"	306
+"307"	"M"	"Unknown"	69	164.6	28.9	"A"	"I"	"N"	"N"	"N"	"Y"	"N"	"N"	"N"	"N"	"N"	2.5	"*1/*2"	"A/G"	"C/T"	307
+"308"	"M"	"White"	65	131.9	28.9	"G"	"D"	"N"	"N"	"N"	"N"	"N"	"N"	"N"	"N"	"N"	2.6	"*2/*3"	"A/G"	"C/T"	308
