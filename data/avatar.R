@@ -32,7 +32,6 @@ YesNoFactor = as.factor(c("Y", "N"))
 
 
 avatars_valid = function(avatars) {
-  
   ( avatars$RACE    %in% RACE 
   * avatars$VKORC1G %in% VKORC1G
   * avatars$VKORC1T %in% VKORC1T
