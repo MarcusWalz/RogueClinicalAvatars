@@ -19,17 +19,33 @@
 
 library(plyr)
 library(doMC)
+# registerDoMC(10)
 source("hamberg_2007.R")
 source("maintenance_protocols.R")
 source("initial_dose.R")
 source("job.distributor.R")
 
-my_av = read.table("data_semifinal.txt", sep=" ", header=T)[1:1000,]
-my_av$ENZYME <- "Y"
+job_num = as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 
-my_sim =
-  list ( days = 90
+how_many_jobs = 30
+
+my_av = read.table("iwpc_avatars_final.txt.head", sep="\t", header=T)
+
+num_avatars = nrow(my_av)
+
+avs_per_job = ceiling(num_avatars / how_many_jobs)
+
+start = (job_num - 1)  * avs_per_job + 1
+end   = (job_num    )  * avs_per_job
+
+my_av = my_av[start:end,]
+
+
+my_av = my_av[my_av$CYP2C9 != "Missing",]
+
+my_sim = list ( days = 90
        , max_dose = 100
+       , replicates = 1 
        , max_time = 24
        , protocol = "ahc_clinical"
        , initial_dose  = "pginitial_IWPC"
@@ -42,12 +58,11 @@ process_avatars = function( avatars
                           , replicates = 1
                           , threads = 1 
                           ) {
-  registerDoMC(threads)
 
   if(build) {
     
     # set simulations$replicates if undefined
-    if("replicates" %in% names(simulations) || is.null(simulations$replicates)) {
+    if(!("replicates" %in% names(simulations)) || is.null(simulations$replicates)) {
       simulations$replicates = replicates
     }
     # pick up the random seed, otherwie fall back to default `initial_seed`
@@ -97,7 +112,9 @@ process_avatar = function(simulation_in) {
   # (1) avatar as a list
   # (2) simulation as a list
   
-  # print(simulation_in)
+  # see if it works?
+  system("hostname")
+ # print(simulation_in)
   attach(simulation_in, warn.conflicts = F)
 
 
@@ -168,7 +185,6 @@ process_avatar = function(simulation_in) {
               dose = gedge_intermt(measured_inr, dose, day, simulation$max_dose)
             } else if (simulation$protocol == "ahc_clinical") {
             dose = ahc_clinical(as.numeric(as.character(measured_inr)), as.numeric(as.character(inr[1:day])), as.numeric(as.character(inr_check[1:day])), as.numeric(as.character(dose)), day, simulation$max_dose, as.character(avatar$TINR))
-            print("hi2")
           } else if (simulation$protocol == "eu_pact_intermt") {#initial and alteration: eu_pact || maintenance: intermountain
             dose = eu_pact_intermt(measured_inr, dose, day, simulation$max_dose, avatars$AGE, as.character(avatar$VKORC1G), avatar$BSA, avatar$TINR, as.character(avatar$AMI), as.character(avatar$CYP2C9), avatar$HEIGHT, avatar$WEIGHT)
          } else if (simulation$protocol == "eu_pact_ahc") {#initial and alteration: eu_pact || maintenance: ahc
@@ -188,7 +204,8 @@ list( avatar     = avatar
       )
 }
 
-process_avatars(my_av, my_sim)
+out = process_avatars(my_av, my_sim, threads=1)
+save( out , file=paste("sim_output", job_num, "Rdata", sep = "."))
 
 ###### Note: max_time arguement is defined based on the adopted PK/PD model. So, since Hamberg PK/PD
 ###### model is based on a 24-hr time period, we decided to make argument "max_time" constant "24".
