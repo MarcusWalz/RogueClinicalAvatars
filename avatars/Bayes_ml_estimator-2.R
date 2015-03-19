@@ -1,7 +1,7 @@
 #ML ESTIMATOR FOR A BAYESIAN NETWORK OF DISCRETE VALUES################################################################
 require(ggm)
 
-test=TRUE
+test=F
 
 if(!test) {
 args <- commandArgs(T)
@@ -194,7 +194,7 @@ cartesian_condition = function( df      # data frame
 }
 
 
-WRAP = cartesian_condition
+WRAP = function(a,b,c, d) { cartesian_condition(a,b,c,cutoff_ignore_missing(d)) }
 
 Missing_data_estimator=function(data,project_site,missing_prob_table){
   conditions=(missing_prob_table$Conditions)
@@ -292,10 +292,14 @@ Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identi
   return(prob_table)
 }
 
-# if(!test) {
-# final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RDeata"){
-#  for(i in 1:length(prob_list)){
-#    prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
-#  }
-#  save(prob_list,file=filename)
-#}
+if(!test) {
+ final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RDeata"){
+  for(i in 1:length(prob_list)){
+    prob_list[i]=Missing_data_selecter(data,prob_list[i],scarcity_cutoff,missing_identifier)
+  }
+  save(prob_list,file=filename)
+}
+  bayes_network_model=bayes_network_model[topOrder(dummy_dag),topOrder(dummy_dag)]
+  Table_1=Bayes_ml_estimator(Training_data,bayes_network_model,scarcity_cutoff)
+  Final_table=final_prob_table(Table_1,Training_data,scarcity_cutoff,missing_identifier,file_name)
+}

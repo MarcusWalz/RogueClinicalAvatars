@@ -60,7 +60,8 @@ initial_dose <- function(avatars, dosing_algorithm, units="English"){
   if (dosing_algorithm == "AHC"){    
      DOSE=array(0,dim=c(nrow(avatars)))
      #DOSE <- ifelse(avatars$condition=="condition_1", 10, 5)
-     DOSE <- ifelse(avatars$AGE < 65, 10, 5)
+     DOSE <- ifelse(avatars$AGE < 65 || avatars$AMI == "Y" || avatars$DIABETES == "Y", 10, 5)
+     # Diabetes or ami 5mg
      InitialDose <- DOSE
      avatars<-cbind(avatars,InitialDose)  
      #View(avatars)

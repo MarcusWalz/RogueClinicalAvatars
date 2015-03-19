@@ -1,24 +1,36 @@
 prob_tables=eval(File.open(ARGV[0]).read)
 
+prob_tables.map! do | prob_table |
+  prob_table.map! do | p | 
+    l = []
+
+    p["probs"].each do |value,freq|
+      unless value == "*" then
+        l += [value] * freq
+      end
+    end
+
+    p["probs"] = l
+
+    p
+
+  end 
+end
+
 #TODO use frequencies!!!! Stop Multiplying by 100!
 def prob_table_to_rand_value(prob_table, drop_missing=false)
-  if prob_table == nil then return "no p-table" end
-
-  l = []
-
-
-  prob_table["probs"].each do |value,freq| 
-    unless value == "*" then
-      l += [value] * (freq * 100).floor
-    end
+  if prob_table.nil? then
+    "no prob_table"
+  elsif prob_table["probs"].empty? then
+    "*"
+  else
+    prob_table["probs"].sample
   end
-
-  if l.length >= 1 then l.sample() else "all missing" end
-
 end
 
 def matches_avatar(prob_table,avatar) 
   if(prob_table == {}) then return true end
+
   prob_table["on_fields"].each do |key,value|
     if avatar[key] != value then return false end
   end
@@ -40,6 +52,7 @@ def lookup_prob_table(prob_tables, avatar)
 
 
   prob_tables = prob_tables.select { |p_table| matches_avatar(p_table,avatar)}
+
 
   best_table = nil
   specificity = -1

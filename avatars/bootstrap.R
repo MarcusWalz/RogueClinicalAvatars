@@ -1,5 +1,3 @@
-args <- commandArgs(trailingOnly = TRUE)
-
 #output_table_name = paste(table_name, ".bs", sep="")
 
 table = read.delim(file('stdin'), header=T)
