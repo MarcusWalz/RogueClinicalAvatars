@@ -1,0 +1,1 @@
+Race	Age	Gender	Height	Weight	CYP2C9	VKORC1	CYP2C9.2	CYP2C9.3	VKORC1.1173.	VKORC1..1639.	DVT	Smoker	Target_INR	Amiodarone	DOSE_GAGE	DOSE_ANDWhite	50	M	60	200	*1/*1	B/B	C/C	A/A	C/C	G/G	N	N	2.5	N	10	10White	50	M	60	200	*1/*1	B/B	C/C	A/A	C/C	A/A	N	N	2.5	N	10	10White	50	M	60	200	*1/*1	B/B	C/C	A/A	C/C	A/G	N	N	2.5	N	10	10
