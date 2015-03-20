@@ -24,7 +24,11 @@ source("initial_dose.R")
 source("process_avatar.R")
 
 my_av = read.table("sample_avatars.txt", sep="\t", header=T)[1:100,]
-my_av$ENZYME <- "Y"
+
+# hamburg needs a CYP2C9, let's filter these avatars out for now
+my_av = my_av[my_av$CYP2C9 != "Missing",]
+
+
 
 my_sim =
   list ( days = 90
