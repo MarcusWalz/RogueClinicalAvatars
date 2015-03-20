@@ -18,13 +18,12 @@
 #   or a single base simulation 
 
 library(plyr)
-library(doMC)
 source("hamberg_2007.R")
 source("maintenance_protocols.R")
 source("initial_dose.R")
 source("process_avatar.R")
 
-my_av = read.table("data_semifinal.txt", sep=" ", header=T)[1:1000,]
+my_av = read.table("sample_avatars.txt", sep="\t", header=T)[1:100,]
 my_av$ENZYME <- "Y"
 
 my_sim =
@@ -42,7 +41,10 @@ process_avatars = function( avatars
                           , replicates = 1
                           , threads = 1 
                           ) {
-  registerDoMC(threads)
+  if(threads > 1) {
+    library(doMC)
+    registerDoMC(threads)
+  }
 
   if(build) {
     
