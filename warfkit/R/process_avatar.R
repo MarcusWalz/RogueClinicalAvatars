@@ -1,5 +1,3 @@
-
-
 process_avatars = function( avatars
                           , simulations
                           , build = T

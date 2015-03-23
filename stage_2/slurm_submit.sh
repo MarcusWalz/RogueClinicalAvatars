@@ -1,3 +1,4 @@
+#!/bin/sh
 # arg1 = prefix
 prefix=$1
 
