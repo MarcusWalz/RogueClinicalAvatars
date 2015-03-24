@@ -1,4 +1,4 @@
-INR and Simulation 
+INR and Dose Simulation 
 ---------------------------
 
 Bind Simulation Params and Data Sets, split data set.
