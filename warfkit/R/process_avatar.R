@@ -1,59 +1,3 @@
-process_avatars = function( avatars
-                          , simulations
-                          , build = T
-                          , initial_seed = 4321
-                          , replicates = 1
-                          , threads = 1 
-                          ) {
-  registerDoMC(threads)
-
-  if(build) {
-    
-    # set simulations$replicates if undefined
-    if("replicates" %in% names(simulations) || is.null(simulations$replicates)) {
-      simulations$replicates = replicates
-    }
-    # pick up the random seed, otherwie fall back to default `initial_seed`
-    if(!is.null(simulations$seed)) {
-      initial_seed = simulations$seed
-    }
-
-    # delete random seed
-    simulations[which(names(simulations) %in% c("seed"))] <- NULL
-
-    # create a numbered list of simulations  
-    simulations = rep(list(simulations), nrow(avatars))
-  }
-  
-  if(length(simulations) != nrow(avatars)) {
-    stop("simulation param of incorrect length")
-  }
-
-  # assign random seeds to simulations
-
-  # set using the default seed
-  set.seed(initial_seed)
-
-  for(simulation in simulations) {
-
-    # set the seeds if undefined 
-    if("seed" %in% names(simulation) || is.null(simulation$seed)) {
-      simulation$seed = sample(10^12, simulation$replicates, replace=T)
-    }
-  }
-
-  # bind simulation params to avatar
-  simulation_in = sapply(1:nrow(avatars), function(n) {
-    list(list( avatar     = as.list(avatars[n,])
-        , simulation = simulations[[n]]   
-        ))
-  })
-
-  # in parallel conduct the simulation!
-  llply(simulation_in, process_avatar, .parallel = threads > 1)
-}
-
-
 
 process_avatar = function(simulation_in) {
   # simulation_in contains
@@ -109,7 +53,8 @@ process_avatar = function(simulation_in) {
 
         if (is.na(dose[min(day+1, simulation$days)])) {
             inr_check[day] = day  # checked INR on this day (due to looping we are off by one day when we check inr so 2,4,7 days are clinically 3,5,8 but don't worry it all works out)
-            get_protocol(avatar, simulation)(INR, does, day, inr_check)
+            dose = get_protocol(avatar, simulation)(inr, dose, day, inr_check)
+            print(dose)
         }
       }
     }

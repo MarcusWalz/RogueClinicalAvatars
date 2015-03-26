@@ -1108,7 +1108,7 @@ rob4 <- list("<=1.5" = list("<=50" = 10,
 
 roberts_protocol = function(avatar, simulation) {
   maxDose = simulation$max_dose
-  age = avatar$AGE
+  age = as.numeric(as.character(avatar$AGE))
   function(INR, dose, day, check){
 	age_str <- ifelse(age <= 50, "<=50", ifelse((age > 50 & age <=65), "51-65", ifelse((age > 65 & age <= 80), "66-80", ">80")))
 
@@ -1408,15 +1408,13 @@ adjustDoseByPercent = function(INR, percent = 0.10, maxDose = 10) {
  
  ahc_clinical_protocol = function(avatar,simulation) {
    maxDose = simulation$max_dose
-   TINR = avatar$TINR
+   TINR = as.numeric(as.character(avatar$TINR))
 
 
-  function(INR, dose, day, check){
-     day = which(dose == 0)
-     INRs = INR
-     INR = INRs[1:day]
+  function(INR, dose, day, check) {
+     INRs = INR[1:day]
+     INR = INRs[day]
      INR.check = check[1:day]
-     dose = dose[1:day]
 
  if(TINR <= 3.0) {
   TINR = "low"  
