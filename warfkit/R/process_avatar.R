@@ -109,39 +109,10 @@ process_avatar = function(simulation_in) {
 
         if (is.na(dose[min(day+1, simulation$days)])) {
             inr_check[day] = day  # checked INR on this day (due to looping we are off by one day when we check inr so 2,4,7 days are clinically 3,5,8 but don't worry it all works out)
-            if (simulation$protocol == "coumagen_pharm") {
-                dose = coumagen_pharm(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "coumagen_standard") {
-                dose = coumagen_standard(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "wilson") {
-                dose = wilson(measured_inr, dose, day, simulation$max_dose)		                    
-            } else if (simulation$protocol == "fixed_dose") {
-                dose = fixed_dose(dose, day) 
-            } else if (simulation$protocol == "wilson_coumagen_pharm") {
-                dose = wilson_coumagen_pharm(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "wilson_coumagen_standard") {
-                dose = wilson_coumagen_standard(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "cooper_intermt") {
-                dose = cooper_intermt(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "fen_intermt") {
-              dose = fen_intermt(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "rob_intermt") {
-              dose = rob_intermt(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "gedge_intermt") {
-              dose = gedge_intermt(measured_inr, dose, day, simulation$max_dose)
-            } else if (simulation$protocol == "ahc_clinical") {
-            dose = ahc_clinical(as.numeric(as.character(measured_inr)), as.numeric(as.character(inr[1:day])), as.numeric(as.character(inr_check[1:day])), as.numeric(as.character(dose)), day, simulation$max_dose, as.character(avatar$TINR))
-            print("hi2")
-          } else if (simulation$protocol == "eu_pact_intermt") {#initial and alteration: eu_pact || maintenance: intermountain
-            dose = eu_pact_intermt(measured_inr, dose, day, simulation$max_dose, avatars$AGE, as.character(avatar$VKORC1G), avatar$BSA, avatar$TINR, as.character(avatar$AMI), as.character(avatar$CYP2C9), avatar$HEIGHT, avatar$WEIGHT)
-         } else if (simulation$protocol == "eu_pact_ahc") {#initial and alteration: eu_pact || maintenance: ahc
-            dose = eu_pact_ahc(measured_inr, dose, day, simulation$max_dose, avatar$AGE, as.character(avatar$VKORC1G), avatar$BSA, avatar$TINR, as.character(avatar$AMI), as.character(avatar$CYP2C9), avatar$HEIGHT, avatar$WEIGHT, as.numeric(as.character(inr[1:day])), as.numeric(as.character(inr_check[1:day])))
-         } else {
-                stop("Hey buddy, you forgot to add the protocol to the simulator - duh...")
+            get_protocol(avatar, simulation)(INR, does, day, inr_check)
         }
       }
     }
-  }
   list("INR" = inr, "Dose" = dose, "Check" = inr_check)
 })
 
