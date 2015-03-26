@@ -1809,7 +1809,7 @@ eu_pact_ahc_protocol = function(avatar, simulation) {
 }	}
 
 # returns a list of protocols
-list_protocols = function() ( ls(pattern="*_protocol"))
+list_protocols = function() ( ls(pattern="*_protocol" all.names="T"))
 
 # run protocol based on simulation param
 get_protocol = function(avatar, simulation) {
