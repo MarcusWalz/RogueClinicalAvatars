@@ -1,0 +1,22 @@
+* using log directory ‘/home/mewalz/ClinicalAvatars/warfkit/..Rcheck’
+* using R version 3.1.2 (2014-10-31)
+* using platform: x86_64-unknown-linux-gnu (64-bit)
+* using session charset: UTF-8
+* checking for file ‘./DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘warfkit’ version ‘1.0’
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  ..Rcheck
+These were most likely included in error. See section ‘Package
+structure’ in the ‘Writing R Extensions’ manual.
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘warfkit’ can be installed ... ERROR
+Installation failed.
+See ‘/home/mewalz/ClinicalAvatars/warfkit/..Rcheck/00install.out’ for details.

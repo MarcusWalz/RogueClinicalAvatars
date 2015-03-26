@@ -195,7 +195,10 @@ kovacs5 <- list("15" = list("<2" = c(15,15,15),
 
 # Kovacs protocol (7 days)
 
-kovacs <- function(INR, dose, day, maxDose = 10){
+kovacs_protocol = function(avatar, simulation) { 
+  maxDose = simulation$max_dose
+  
+  function(INR, dose, day, check){
 
 	maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
 	
@@ -220,11 +223,14 @@ kovacs <- function(INR, dose, day, maxDose = 10){
 		stop("Something is wrong in Kovacs. This protocol is only used for the first 7 days. Check what you did!!")
 	}
 
-}
+}}
 
 # Intermountain protocol (INR-based dose adjustment; unlimited)
 
-intermt <- function(INR, dose, day, maxDose = 10){
+intermt_protocol <- function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  
+  function(INR, dose, day, check){
 
 	maxDays <- length(dose) # Dose vector can be augmented by long recheck intervals; this makes sure that length(dose) is returned constant
 	
@@ -279,7 +285,7 @@ intermt <- function(INR, dose, day, maxDose = 10){
 	} else {
 		stop("Something is wrong in Intermountain...How did you reach here?")
 	}
-}
+}}
 
 
 # Coumagen protocol (unlimited days)
@@ -289,7 +295,11 @@ intermt <- function(INR, dose, day, maxDose = 10){
 # 2*{predicted daily dose}
 # After day 7, uses Intermountain to do INR-based adjustment
 
-coumagen_pharm <- function(INR, dose, day, maxDose = 10){
+coumagen_pharm_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+
+  function(INR, dose, day, check, maxDose = 10){
   
   pharm_coeff <- (.5*dose[1]*7)/35
   
@@ -297,25 +307,28 @@ coumagen_pharm <- function(INR, dose, day, maxDose = 10){
     dose[2] = dose[1]
     return(dose)
   } else if(day == 2){
-    dose <- kovacs(INR, dose, day, maxDose = 10)
+    dose <- kovacs(INR, dose, day, check, maxDose = 10)
     dose[3:4] <- dose[3:4]*pharm_coeff
     return(dose)
   } else if(day == 4){
     dose[3:4] <- dose[3:4]*(1/pharm_coeff)
-    dose <- kovacs(INR, dose, day, maxDose = 10)
+    dose <- kovacs(INR, dose, day, check, maxDose = 10)
     dose[3:7] <- dose[3:7]*pharm_coeff
     return(dose)
   } else if(day >= 7){
-    return(intermt(INR, dose, day, maxDose = 10))
+    return(intermt(INR, dose, day, check, maxDose = 10))
   } else {
     stop("Something is wrong in coumagen_pharm...check what you did!")
   }
   
-}
+}}
 
 
 
-fen_intermt <- function(INR, dose, day, maxDose = 10){
+fen_intermt_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+
+  function(INR, dose, day, check){
   if (day <= 7) {
     INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4.5, ">4.5", as.character(INR)))
     day_str <- as.character(day)
@@ -329,55 +342,66 @@ fen_intermt <- function(INR, dose, day, maxDose = 10){
     return(dose)
     
     }else if(day>7){
-      return(intermt(INR, dose, day, maxDose = 10))
+      return(intermt(INR, dose, day, check, maxDose = 10))
     }else{
         stop("Something is wrong in coumagen_pharm...check what you did!")
       }
-}
+}}
 
 # Coumagen standard protocol (unlimited days)
 # uses Kovacs for first 6 days
 # After day 7, uses Intermountain to do INR-based adjustment
 
-coumagen_standard <- function(INR, dose, day, maxDose = 10){
+coumagen_standard_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
 	
 	if(day == 1){
 		dose[2] = dose[1]
 		return(dose)
 	} else if(day == 2){
-		dose <- kovacs(INR, dose, day, maxDose = 10)
+		dose <- kovacs_protocol(avatar, simulation)(INR, dose, day, check)
 		return(dose)
 	} else if(day == 4){
-		dose <- kovacs(INR, dose, day, maxDose = 10)
+		dose <- kovacs_protocol(avatar, simulation)(INR, dose, day, check)
 		return(dose)
 	} else if(day >= 7){
-		return(intermt(INR, dose, day, maxDose = 10))
+		return(intermt_protocol(avatar, simulation)(INR, dose, day, check))
 	} else {
 		stop("Something is wrong in coumagen_standard...check what you did!")
 	}		
-}
+}}
 
 # combined coumagen pharm protocol first 7 days followed by wilson
-wilson_coumagen_pharm <- function(INR, dose, day, maxDose = 10) {
+wilson_coumagen_pharm_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
     if (day < 7) {
-        return(coumagen_pharm(INR, dose, day, maxDose = 10))
+        return(coumagen_pharm_protocol(avatar, simulation)(INR, dose, day, check))
     } else {
-        return(wilson(INR, dose, day, maxDose = 10))
+        return(wilson_protocol(avatar, simulation)(INR, dose, day, check))
     }
-}
+}}
 
 # combined coumagen standard protocol first 7 days followed by wilson
-wilson_coumagen_standard <- function(INR, dose, day, maxDose = 10) {
+wilson_coumagen_standard_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
     if (day < 7) {
-        return(coumagen_standard(INR, dose, day, maxDose = 10))
+        return(coumagen_standard_protocol(avatar, simulation)(INR, dose, day, check))
     } else {
-        return(wilson(INR, dose, day, maxDose = 10))
+        return(wilson_protocol(avatar, simulation)(INR, dose, day, check))
     }
-}
+}}
 
 # Wilson protocol (unlimited days)
 
-wilson <- function(INR, dose, day, maxDose = 10){
+wilson_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
 	maxDays <- length(dose)
 
 	if(INR <= 1.3){ # Recheck in 5 days -> set 5 doses
@@ -424,7 +448,7 @@ wilson <- function(INR, dose, day, maxDose = 10){
 		stop("Something is wrong...How did you reach here?")
 	}
 	stop("Something is terribly wrong...")
-}
+}}
 
 # Fennerty protocol (4 days)
 
@@ -535,8 +559,11 @@ fen <- list("1" = list("<1.4" = 10),
 		           ">4.5" = c(0,0,1)))
 
 
-fennerty <- function(INR, dose, day, maxDose = 10){
-
+fennerty_protocol =
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
+	maxDays <- length(dose)
     if (day <= 4) {
     	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4.5, ">4.5", as.character(INR)))
     	day_str <- as.character(day)
@@ -552,7 +579,7 @@ fennerty <- function(INR, dose, day, maxDose = 10){
         dose[(day+1)] = dose[day]
         return(dose)
     }    
-}
+}}
 
 # Cooper protocol (modified Fennerty; 4 days)
 
@@ -647,7 +674,10 @@ coop <- list("1" = list("<1.4" = 10),
 		           "4" = 3,
 		           ">4" = 0))
 
-cooper <- function(INR, dose, day, maxDose = 10){
+cooper_protocol =
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
 
 	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
 	day_str <- as.character(day)
@@ -666,10 +696,13 @@ cooper <- function(INR, dose, day, maxDose = 10){
 	dose[(day+1)] <- ifelse(is.null(coop[[day_str]][[INR_str]]), dose[day], coop[[day_str]][[INR_str]])
 	return(dose)
 
-}
+}}
 
 
-cooper_intermt <- function(INR, dose, day, maxDose = 10){
+cooper_intermt_protocol =
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
   
   INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
   day_str <- as.character(day)
@@ -689,10 +722,10 @@ cooper_intermt <- function(INR, dose, day, maxDose = 10){
   return(dose)
   
   if(day > 7){
-    return(intermt(INR, dose, day, maxDose = 10))
+    return(intermt_protocol(avatar, simulation)(INR, dose, day, check))
   }
   
-}
+}}
 
 
 
@@ -786,10 +819,12 @@ ged <- list("1" = list("<1.4" = 10),
 		         "3.7" = 0,
 		         "3.8" = 0,
 		         "3.9" = 0,
-		         "4" = 0,
 		         ">4" = 0))
 
-gedge <- function(INR, dose, day, maxDose = 10){
+gedge_protocol =
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
 
     if (day <= 4) {
     	INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
@@ -802,9 +837,12 @@ gedge <- function(INR, dose, day, maxDose = 10){
 	    return(dose)
 	}
 
-}
+}}
 
-gedge_intermt <- function(INR, dose, day, maxDose = 10){
+gedge_intermt_protocol =
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
   
   if (day <= 4) {
     INR_str <- ifelse(INR < 1.4, "<1.4", ifelse(INR > 4, ">4", as.character(INR)))
@@ -816,10 +854,10 @@ gedge_intermt <- function(INR, dose, day, maxDose = 10){
     dose[(day+1)] = dose[day]
     return(dose)
   } else{
-    return(intermt(INR, dose, day, maxDose = 10))
+    return(intermt_protocol(avatar, simulation)(INR, dose, day, check))
   }
   
-}
+}}
 
 
 # Roberts protocol (4 days)
@@ -1068,7 +1106,10 @@ rob4 <- list("<=1.5" = list("<=50" = 10,
 
 # This protocol also uses the avatar's age
 
-roberts <- function(INR, dose, day, age, maxDose = 10){
+roberts_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  age = as.numeric(as.character(avatar$AGE))
+  function(INR, dose, day, check){
 	age_str <- ifelse(age <= 50, "<=50", ifelse((age > 50 & age <=65), "51-65", ifelse((age > 65 & age <= 80), "66-80", ">80")))
 
 	if(day == 1){
@@ -1092,9 +1133,13 @@ roberts <- function(INR, dose, day, age, maxDose = 10){
 		return(dose)
 	}
 	
-}
+}}
 
-rob_intermt <- function(INR, dose, day, age, maxDose = 10){
+rob_intermt_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  age = avatar$AGE
+  function(INR, dose, day, check){
   age_str <- ifelse(age <= 50, "<=50", ifelse((age > 50 & age <=65), "51-65", ifelse((age > 65 & age <= 80), "66-80", ">80")))
   
   if(day == 1){
@@ -1117,17 +1162,20 @@ rob_intermt <- function(INR, dose, day, age, maxDose = 10){
     dose[(day+1)] = dose[day]
     return(dose)
   } else {
-    return(intermt(INR, dose, day, maxDose = 10))
+    return(intermt_protocol(avatar, simulation)(INR, dose, day, check))
   }
   
-}
+}}
 
 
 
 
 
 # fixed dose protocol - the dose is constant the entire time and ignores INR
-fixed_dose = function(dose, day) {
+fixed_dose_protocol = 
+function(avatar, simulation) {
+  function(INR, dose, day, check){
+
     maxDays = length(dose)
     # check on days 1, 2, 3, 7, every 7, then 14 
     if (day == 1 | day == 2) {
@@ -1142,14 +1190,18 @@ fixed_dose = function(dose, day) {
         stop("Somthing is horribly wrong with the fixed_dose protocol")
     }
     return(dose[1:maxDays])
-}
+
+}}
 # random protocol based off "know_your_patient"
 # this protocol will ignore the INR value and provide a random dose according to the days specified
 # sets the random seed based on the system time.  Otherwise, it will use the rseed value from the INR function and it
 # will be the same number every time.  It's too fast for the time so you can still get the same seed hence divide by day.
 # Apparently, the set.seed works globablly 
-know_your_patient_random = function(INR, dose, day, rseed, maxDose = 12.5) {
-    set.seed(rseed)
+know_your_patient_random_protocol = 
+function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
+    #set.seed(rseed)
     possibleDoses = seq(0, maxDose, 2.5)
     maxDays = length(dose)
     # check on days 1, 2, 3, 7, every 7, then 14 
@@ -1165,7 +1217,7 @@ know_your_patient_random = function(INR, dose, day, rseed, maxDose = 12.5) {
         stop("Somthing is horribly wrong with the know_your_patient_random protocol")
     }
     return(dose[1:maxDays])
-}
+}}
 
 # based on the nomogram from the BWH warfarin clinic - it's very vague so we made some assumptions and guesses
 # in the clinic they start everyone at 5 mg and adjust in 2.5 mg increments
@@ -1174,42 +1226,44 @@ know_your_patient_random = function(INR, dose, day, rseed, maxDose = 12.5) {
 # will be the same number every time.  It's too fast for the time so you can still get the same seed hence divide by day.
 # Apparently, the set.seed works globablly.
 # for day 28 and beyond we check if the previous 14 doses are equal to the current dose and if the INR is in range to indicate stability
-know_your_patient = function(INR, dose, day, rseed, maxDose = 12.5) {
+know_your_patient_protocol = function(avatar, simulation) {
+  maxDose = simulation$max_dose
+  function(INR, dose, day, check){
     set.seed(rseed)
     possibleDoses = seq(0, maxDose, 2.5)
     maxDays = length(dose)
     # check on days 1, 2, 3, 7, every 7, then 14 
     
     if (day == 1 | day == 2) {
-        dose[day+1] = know_your_patient23(INR, dose, day, possibleDoses, 1)
+        dose[day+1] = know_your_patient23(INR, dose, day, check, possibleDoses, 1)
     } else if (day == 3) {
-        dose[(day+1):7] = know_your_patient23(INR, dose, day, possibleDoses, (7-day))
+        dose[(day+1):7] = know_your_patient23(INR, dose, day, check, possibleDoses, (7-day))
     } else if (day == 7) {
-        dose[(day+1):14] = know_your_patient23(INR, dose, day, possibleDoses, (14-day))
+        dose[(day+1):14] = know_your_patient23(INR, dose, day, check, possibleDoses, (14-day))
     } else if (day >= 14 & day < 28) {
         if (INR < 2.0) {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, check, possibleDoses, 7)
         } else if (INR >= 2.0 & INR <= 3.0) {
-            dose[(day+1):(day+14)] = know_your_patient23(INR, dose, day, possibleDoses, 14) 
+            dose[(day+1):(day+14)] = know_your_patient23(INR, dose, day, check, possibleDoses, 14) 
         } else {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, check, possibleDoses, 7)
         }
     } else if (day >= 28) {
         if (INR < 2.0) {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, check, possibleDoses, 7)
         } else if (INR >= 2.0 & INR <= 3.0 & dose[day] == mean(dose[(day-14):day])) {
-            dose[(day+1):(day+30)] = know_your_patient23(INR, dose, day, possibleDoses, 30) 
+            dose[(day+1):(day+30)] = know_your_patient23(INR, dose, day, check, possibleDoses, 30) 
         } else {
-            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, possibleDoses, 7)
+            dose[(day+1):(day+7)] = know_your_patient23(INR, dose, day, check, possibleDoses, 7)
         }
     } 
     else {
         stop("Somthing is horribly wrong with the know_your_patient protocol")
     }
     return(dose[1:maxDays])
-}
+}}
 
-know_your_patient23 = function(INR, dose, day, possibleDoses, numDoses) {
+know_your_patient23 = function(INR, dose, day, check, possibleDoses, numDoses) {
     if (INR < 2.0) {
         tmpDoses = possibleDoses[possibleDoses >= dose[day]]
         if (length(tmpDoses) == 1) {
@@ -1352,9 +1406,17 @@ adjustDoseByPercent = function(INR, percent = 0.10, maxDose = 10) {
 }
 
  
- ahc_clinical <- function(INR, INRs, INR.check, dose, day, maxDose = 15, TINR){
+ ahc_clinical_protocol = function(avatar,simulation) {
+   maxDose = simulation$max_dose
+   TINR = as.numeric(as.character(avatar$TINR))
 
- if(TINR <= 2.5) {
+
+  function(INR, dose, day, check) {
+     INRs = INR[1:day]
+     INR = INRs[day]
+     INR.check = check[1:day]
+
+ if(TINR <= 3.0) {
   TINR = "low"  
  } else {
   TINR = "high"
@@ -1609,7 +1671,7 @@ adjustDoseByPercent = function(INR, percent = 0.10, maxDose = 10) {
   #return(as.numeric(as.character(dose)))
   # return(dose)
 } 
-}   
+}   }
 
 ##############################################
 ########## EU_PACT_INTERMT Protocol ##########
@@ -1661,7 +1723,11 @@ lenzini_eu_pact <- function(Dose4, Dose3, Dose2, INR, BSA, AGE, VKORC1G, AMI, TI
   return(doseLenz/7)
 }
 
-eu_pact_intermt <- function(INR, dose, day, maxDose, AGE, VKORC1G, BSA, TINR, AMI, CYP2C9, HEIGHT, WEIGHT){
+eu_pact_intermt_protocol = function(avatar, simulation) {
+  attach(avatar)
+  maxDose = simulation$max_dose
+
+  function(INR, dose, day, check) {
 		
 	maxDays <- length(dose)
 	
@@ -1689,11 +1755,11 @@ eu_pact_intermt <- function(INR, dose, day, maxDose, AGE, VKORC1G, BSA, TINR, AM
 	  dose[4:5] <- lenzini_eu_pact(Dose4 = 0, Dose3 = dose[2], Dose2 = dose[3], INR, BSA, AGE, VKORC1G, AMI, TINR, CYP2C9)
 	  return(dose)
 	} else if(day >= 5){
-	  return(intermt(INR, dose, day, maxDose = 10))
+	  return(intermt(INR, dose, day, check, maxDose = 10))
 	} else {
 	  stop("Something is wrong in eu_pact...check what you did!")
 	}			
-}	
+}	}
   
 ##############################################
 ############ EU_PACT_AHC Protocol ############
@@ -1704,8 +1770,12 @@ eu_pact_intermt <- function(INR, dose, day, maxDose, AGE, VKORC1G, BSA, TINR, AM
 # Lenzini protocol (EU_PACT version) is the 
 # same as the one for EU_PACT_INTERMT (ABOVE).
 
-eu_pact_ahc <- function(INR, dose, day, maxDose, AGE, VKORC1G, BSA, TINR, AMI, CYP2C9, HEIGHT, WEIGHT, INRs, INR.check){
-		
+eu_pact_ahc_protocol = function(avatar, simulation) {
+  attach(avatar)
+  maxDose = simulation$max_dose
+
+  function(INR, dose, day, check){
+
 	maxDays <- length(dose)
 	
 #Today's INR is considered tomorrow's pre-dose INR. Accordingly, we set tomorrow's dose based on today's INR.
@@ -1732,10 +1802,17 @@ eu_pact_ahc <- function(INR, dose, day, maxDose, AGE, VKORC1G, BSA, TINR, AMI, C
 	  dose[4:5] <- lenzini_eu_pact(Dose4 = 0, Dose3 = dose[2], Dose2 = dose[3], INR, BSA, AGE, VKORC1G, AMI, TINR, CYP2C9)
 	  return(dose)
 	} else if(day >= 5){
-	  return(ahc_clinical(INR, INRs, INR.check, dose, day, maxDose = 15, TINR))
+	  return(ahc_clinical_protocol(INR, dose, day, check))
 	} else {
 	  stop("Something is wrong in eu_pact...check what you did!")
 	}			
-}	
+}	}
 
+# returns a list of protocols
+list_protocols = function() ( ls(pattern="*_protocol" all.names="T"))
+
+# run protocol based on simulation param
+get_protocol = function(avatar, simulation) {
+  get(paste(simulation$protocol, "protocol", sep="_"))(avatar, simulation)
+}
 

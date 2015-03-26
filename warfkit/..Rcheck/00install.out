@@ -1,0 +1,10 @@
+* installing *source* package ‘warfkit’ ...
+** R
+** preparing package for lazy loading
+Warning in file(filename, "r", encoding = encoding) :
+  cannot open file 'hamberg_2007.R': No such file or directory
+Error in file(filename, "r", encoding = encoding) : 
+  cannot open the connection
+Error : unable to load R code in package ‘warfkit’
+ERROR: lazy loading failed for package ‘warfkit’
+* removing ‘/home/mewalz/ClinicalAvatars/warfkit/..Rcheck/warfkit’

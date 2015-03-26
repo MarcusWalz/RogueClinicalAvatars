@@ -1,4 +1,4 @@
-source("process_avatar.R")
+library(warfkit)
 
 args <- commandArgs(T)
 
