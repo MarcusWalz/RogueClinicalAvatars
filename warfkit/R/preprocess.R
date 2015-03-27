@@ -43,6 +43,9 @@ preprocess_avatars = function( avatars
                           , initial_seed = 4321
                           , replicates = 1
                           ) {
+  # Will exit program with a nice error message if avatars are invalid.
+  validate_avatars(avatars)
+
   if(build) {
     
     # set simulations$replicates if undefined
