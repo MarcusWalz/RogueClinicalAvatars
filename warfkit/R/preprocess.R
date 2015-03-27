@@ -29,13 +29,13 @@
 
 
 
-my_sim =
-  list ( days = 90
-       , max_dose = 100
-       , max_time = 24
-       , protocol = "ahc_clinical"
-       , initial_dose  = "pginitial_IWPC"
-       )
+# my_sim =
+#  list ( days = 90
+#       , max_dose = 100
+#       , max_time = 24
+#       , protocol = "ahc_clinical"
+#       , initial_dose  = "pginitial_IWPC"
+#       )
 
 preprocess_avatars = function( avatars
                           , simulations
@@ -43,8 +43,10 @@ preprocess_avatars = function( avatars
                           , initial_seed = 4321
                           , replicates = 1
                           ) {
-  # Will exit program with a nice error message if avatars are invalid.
+
+  # Will exit program with a nice error message if avatars or sim params are invalid.
   validate_avatars(avatars)
+  validate_simulation_params(simulations)
 
   if(build) {
     
@@ -93,8 +95,10 @@ preprocess_avatars = function( avatars
 
 # split avatars into x equal sized chunks
 split_avatars=function(simulation_in, prefix, chunk_size=500) {
+  # split into chunks
   x = split(simulation_in, ceiling(seq_along(simulation_in)/chunk_size))
 
+  # save chunks
   for(i in 1:length(x)) {
     avatars = x[[i]]
     save(avatars, file=paste(prefix, i, "avatars", "Rdata", sep="."))

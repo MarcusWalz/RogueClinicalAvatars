@@ -32,7 +32,7 @@ YesNoFactor = as.factor(c("Y", "N"))
 
 
 # Checks if a dataframe of avatar is formatted correctly in order to run the hamburg model.
-avatars_valid = function(avatars) {
+validate_avatars = function(avatars) {
   # exits if an unknown value is picked up!
   match_factors = function(column, factor) {
     if(!column %in% colnames(avatars)) {
