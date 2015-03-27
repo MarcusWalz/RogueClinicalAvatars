@@ -21,7 +21,7 @@
 categorical_to_continuous<-function(training_data,categorical_data,cut_points,subs=5){
   number_of_categories<-length(cut_points)+1
   categorical_data=as.numeric(as.factor(categorical_data))
-  training_data=as.numeric(training_data)
+  training_data=as.numeric(as.character(training_data))
   total<-length(training_data)
   probabilities<-array(0,dim=c(number_of_categories,subs,3))
   sample_sizes<-array(0,number_of_categories)                    
