@@ -1,0 +1,4 @@
+#!/bin/sh
+
+R CMD bulid warfkit
+R CMD INSTALL warfkit
