@@ -23,8 +23,8 @@ my_sim =
 avs = preprocess_avatars(my_avatars, my_sim)
 
 # Map over the output of preprocess_avatars. Since the function 
-# process_avatar's is  completely "stateless" e.g. each individual
-# simulation is independent of each other. 
+# process_avatar's is  completely "stateless" (i.e. each individual
+# simulation is independent of each other) this is safe.
 
 simulation_out = Map(process_avatar, avs)
 
