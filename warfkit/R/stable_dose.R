@@ -602,7 +602,7 @@ stable_def_21 = function (simulation) {
   FALSE #TODO
 }
 
-get_stable_def = function (group_number) {
+get_stable_def = function (project_site) {
 
   get(paste("stable_def_", as.character(group_number), sep = ""))
 
