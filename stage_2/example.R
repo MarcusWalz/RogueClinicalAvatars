@@ -16,17 +16,17 @@ my_sim =
       , initial_dose  = "pginitial_IWPC"
       )
 
-# Preprocess avatars. This function outputs an array = number of avatars
-# The individual elements of the array contain all the data we need
-# to run the simulation on a singe avatar.
+# Preprocess avatars. This function outputs an array. Each element
+# contains all the data necessary to run the simulation on a single
+# avatar.
 
 avs = preprocess_avatars(my_avatars, my_sim)
 
-# Map the output of preprocess_avatars. Since the function  process_avatar's
-# is  completely "stateless" e.g. unaffected by the order of avatars,
-# this is safe. 
+# Map over the output of preprocess_avatars. Since the function 
+# process_avatar's is  completely "stateless" e.g. each individual
+# simulation is independent of each other. 
 
 simulation_out = Map(process_avatar, avs)
 
-# Save the output
+# Save the output as an .Rdata file
 save(simulation_out, file = "sim_out.Rdata")
