@@ -16,11 +16,10 @@ my_avatars = read.delim("iwpc_avatars.txt")
 Then filter the things we don't want, in our case things with
 the `CY2CP9` field set to `Missing`:
 ```
-my_avatars = my_avatars[my_avatars$CY2CP9 == "Missing",]
+my_avatars = my_avatars[my_avatars$CY2CP9 != "Missing",]
 ```
 
-Specify the simulation params, at minimum it should
-contain:
+Specify the simulation params, at minimum it should contain:
 
 ```
 my_simulation =
@@ -54,6 +53,7 @@ Or on a parallel HPC enviroment, such as `SLURM` split
 ```
 split_avatars(simulation_input, prefix="iwpc_1", chunk_size=500)
 ```
+
 This above snippet splits simulation_input into chunks of 500 avatars. 
 
 Now use a script like `slurm_submit.sh` ot run the script stupidly

@@ -1,8 +1,20 @@
 
 process_avatar = function(simulation_in) {
-  # simulation_in contains
-  # (1) avatar as a list
-  # (2) simulation as a list
+  # Conducts a simulation on an avatar. 
+  # 
+  # Args:
+  #   simulation_in: A named list with:
+  #     avatar:     named list with avatar data
+  #     simulation: named list with simulation paramatars. 
+  # Returns:
+  #  A named list list with:
+  #     avatar:     same as input
+  #     simulation: same as input
+  #     sim_out:    array of data frames (length equal to number of replicates)
+  #      with columns:
+  #       Check: non-zero if an INR check occured on this day
+  #       INR:   predicted INR
+  #       Dose:  dose given to patient on day
   
   # print(simulation_in)
   attach(simulation_in, warn.conflicts = F)
@@ -67,7 +79,7 @@ list( avatar     = avatar
       )
 }
 
-# process multiple avatars at once.
 process_avatars = function(preprocessed_avatars) {
+# Maps process_avatars over an Array of avatars.
   Map(preprocessed_avatars, process_avatar)
 }
