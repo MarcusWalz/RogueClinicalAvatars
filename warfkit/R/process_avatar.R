@@ -66,3 +66,8 @@ list( avatar     = avatar
       , sim_out    = sim_out
       )
 }
+
+# process multiple avatars at once.
+process_avatars = function(preprocessed_avatars) {
+  Map(preprocessed_avatars, process_avatar)
+}
