@@ -5,22 +5,23 @@ library(warfkit)
 my_avatars = read.delim("sample_avatars.txt")
 
 # Let's use the first 25 avatars:
-my_avatars= my_avatars[1:25,]
+my_avatars= my_avatars[1,]
 
 # Specify the simulation paramaters
 my_sim =
- list ( days = 90
+ list ( days = 20 
       , max_dose = 100
       , max_time = 24
+      , replicates = 3
       , protocol = "ahc_clinical"
       , initial_dose  = "pginitial_IWPC"
       )
 
-# Preprocess avatars. This function outputs an array. Each element
+# Preprocess avatars. This function outputs an array where each element
 # contains all the data necessary to run the simulation on a single
 # avatar.
 
-avs = preprocess_avatars(my_avatars, my_sim)
+avs = preprocess_avatars(my_avatars, my_sim, replicates=3)
 
 # Map over the output of preprocess_avatars. Since the function 
 # process_avatar's is  completely "stateless" (i.e. each individual

@@ -1,3 +1,4 @@
+# TODO exit if aux field isn't present in the avatar
 
 ##############################################################################################
 ## Please note the some of the dosing algorithms in this file are just for training purposes #

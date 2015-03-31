@@ -40,7 +40,7 @@ hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24, rs
     #     rseed = 123790  # *3/*3 & G/G
     # }
 
-    set.seed(rseed)
+    #set.seed(rseed)
 	
 	parameters = data.frame("MTT_1"=NA, "MTT_2"=NA, "gamma"=NA, "EC_50"=NA, "cyp_1_1"=NA, "V1"=NA, "V2"=NA, "Q"=NA, "C_s_error"=NA, "lambda"=NA, "e_INR"=NA)
 	

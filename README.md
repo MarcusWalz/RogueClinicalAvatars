@@ -1,16 +1,19 @@
-ClinicalAvatars
-===============
+ClinicalAvatars + Warfarin Simulation 
+=====================================
 
 Warfkit
 ------------------
 
 Warfkit is our Rpackage where are anticogulatent specific code lives.
-To install it, in terminal, from this very directory run the following
-command:
+Code in `stage_1/` and `stage_2/` both depend on it.
+
+To install Warfkit, in terminal and from this very directory,
+run the following command to build and install the Rpackage:
 
 ```
 ./install_warfkit
 ```
+
 
 Then you should be able to import it in the `R` console like so:
 
@@ -18,4 +21,12 @@ Then you should be able to import it in the `R` console like so:
 library(warfkit)
 ```
 
+Warfkit includes dosing protocols, outcome metrics, and the Hamberg 2007
+Warfarin prediction model. It's great.
+
+For a guide on how to preprocess avatars and run simulations see
+`stage_1/`'s README.
+
+And for a guide on how to run outcome metrics on simulation output,
+see `stage_2`'s README.
 

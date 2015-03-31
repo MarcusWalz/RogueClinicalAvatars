@@ -49,15 +49,19 @@ preprocess_avatars = function( avatars
   validate_simulation_params(simulations)
 
   if(build) {
+  # build is always true for now. However, in the future we
+  # may want to assign non-homogenious paramatars to avatars.
     
     # set simulations$replicates if undefined
-    if("replicates" %in% names(simulations) || is.null(simulations$replicates)) {
+    if( is.null(simulations$replicates) ) {
       simulations$replicates = replicates
     }
     # pick up the random seed, otherwie fall back to default `initial_seed`
     if(!is.null(simulations$seed)) {
       initial_seed = simulations$seed
     }
+    # set using the default seed
+    set.seed(initial_seed)
 
     # delete random seed
     simulations[which(names(simulations) %in% c("seed"))] <- NULL
@@ -72,19 +76,11 @@ preprocess_avatars = function( avatars
 
   # assign random seeds to simulations
 
-  # set using the default seed
-  set.seed(initial_seed)
 
-  for(simulation in simulations) {
-
-    # set the seeds if undefined 
-    if("seed" %in% names(simulation) || is.null(simulation$seed)) {
-      simulation$seed = sample(10^12, simulation$replicates, replace=T)
-    }
-  }
 
   # bind simulation params to avatar
   simulation_in = sapply(1:nrow(avatars), function(n) {
+    simulations[[n]]$seed = sample(1:10000, simulations[[n]]$replicates, replace=T)
     list(list( avatar     = as.list(avatars[n,])
         , simulation = simulations[[n]]   
         ))

@@ -18,6 +18,7 @@ process_avatar = function(simulation_in) {
   
   # print(simulation_in)
   attach(simulation_in, warn.conflicts = F)
+  print(simulation)
 
 
   # find the initial dose
