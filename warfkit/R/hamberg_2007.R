@@ -17,7 +17,6 @@
 #	SS:		Patient's steady state status (integer controlled dictionary)
 #				{0,1}
 #	times:	Times to "measure" INR (float vector of hours)
-#	rseed:	Random seed (integer; used for consistency in testing)
 #
 # Output:
 #	INR:		Vector length of "times" input with INR values (float vector)
@@ -30,7 +29,7 @@
 #	-RSE% = SD / mean * 100, so when we solve for SD we get: SD = RSE / 100 * mean
 
 
-hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24, rseed=12345) {
+hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24) {
 
 	library(deSolve)
 	
