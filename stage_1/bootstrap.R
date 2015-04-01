@@ -1,9 +1,0 @@
-#output_table_name = paste(table_name, ".bs", sep="")
-
-table = read.delim(file('stdin'), header=T)
-
-n = nrow(table)
-
-out = table[sample(1:nrow(table), n, replace = TRUE),]
-
-write.table(out, "", sep="\t") 
