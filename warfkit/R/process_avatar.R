@@ -49,7 +49,7 @@ process_avatar = function(simulation_in) {
                                  , as.character(avatar$VKORC1G)
                                  , 1
                                  , simulation$max_time * simulation$days
-                                 , avatar$seed )
+                                 )
 
       inr_error = inr_errors[day] # rnorm(1,0,0.1)
       measured_inr = round(test_patient$INRv[day*24+1] + inr_error, digits=1)
@@ -67,6 +67,8 @@ process_avatar = function(simulation_in) {
         if (is.na(dose[min(day+1, simulation$days)])) {
             inr_check[day] = day  # checked INR on this day (due to looping we are off by one day when we check inr so 2,4,7 days are clinically 3,5,8 but don't worry it all works out)
             dose = get_protocol(avatar, simulation)(inr, dose, day, inr_check)
+
+            dose = Map(function(x) dose_cat(x, avatar$max_dose), dose)
             print(dose)
         }
       }

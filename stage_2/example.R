@@ -3,17 +3,16 @@ library(warfkit)
 
 # Read in the avatars. This file contains 1000 avatars.
 my_avatars = read.delim("sample_avatars.txt")
-
 # Let's use the first 25 avatars:
-my_avatars= my_avatars[1,]
+my_avatars = my_avatars[1,]
 
 # Specify the simulation paramaters
 my_sim =
- list ( days = 20 
+ list ( days = 100
       , max_dose = 100
       , max_time = 24
-      , replicates = 3
-      , protocol = "ahc_clinical"
+      , replicates = 100
+      , protocol = "fixed_dose"
       , initial_dose  = "pginitial_IWPC"
       )
 
