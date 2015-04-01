@@ -1,3 +1,4 @@
+_This file is out fo date!!! See `example.sh` for now_
 
 1. Bootstrap dataset:
 
