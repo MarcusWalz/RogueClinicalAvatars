@@ -1,3 +1,4 @@
+library(plyr)
 
 #This function takes the following arguments and simulates a course of anticoagulation therapy.
 #avatars: A file includes avatars with assigned initial warfarin dose.
@@ -95,10 +96,10 @@ split_avatars=function(simulation_in, prefix, chunk_size=500) {
   x = split(simulation_in, ceiling(seq_along(simulation_in)/chunk_size))
 
   # save chunks
-  for(i in 1:length(x)) {
+  l_ply(1:length(x), function(i) {
     avatars = x[[i]]
     save(avatars, file=paste(prefix, i, "avatars", "Rdata", sep="."))
-  }
+  }, .progress= "text")
 }
 
 # combine split avatars based on a file prefix

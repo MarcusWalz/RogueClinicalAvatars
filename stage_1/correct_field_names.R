@@ -17,7 +17,7 @@ orig$T_INR=categorical_to_continuous(training_data = tdata$TINR[tdata$TINR!="Unk
 levels(orig$AGE)
 ages=sample(10:100,10000,replace=T)
 cutsA=c(10,20,30,40,50,60,70,80,90)
-orig$AGE=categorical_to_continuous(training_data = ages,cut_points = cutsA,categorical_data = orig$AGE)
+orig$AGE=categorical_to_continuous(training_data = ages,cut_points = cutsA,categorical_data = orig$AGE)+10
 
 # levels(orig$VKORC1G) <- c("A/A","G/A","G/G")
 levels(orig$GENDER) <- c("F", "M")
