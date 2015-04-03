@@ -1,4 +1,3 @@
-library(plyr)
 
 #This function takes the following arguments and simulates a course of anticoagulation therapy.
 #avatars: A file includes avatars with assigned initial warfarin dose.
@@ -38,6 +37,7 @@ library(plyr)
 #       , initial_dose  = "pginitial_IWPC"
 #       )
 
+
 preprocess_avatars = function( avatars
                           , simulations
                           , build = T
@@ -68,34 +68,37 @@ preprocess_avatars = function( avatars
     simulations[which(names(simulations) %in% c("seed"))] <- NULL
 
     # create a numbered list of simulations  
-    simulations = rep(list(simulations), nrow(avatars))
+    # simulations = rep(list(simulations), nrow(avatars))
   }
   
-  if(length(simulations) != nrow(avatars)) {
-    stop("simulation param of incorrect length")
-  }
+#  if(length(simulations) != nrow(avatars)) {
+#    stop("simulation param of incorrect length")
+#  }
 
   # assign random seeds to simulations
 
 
 
+  library(plyr)
   # bind simulation params to avatar
-  simulation_in = sapply(1:nrow(avatars), function(n) {
-    simulations[[n]]$seed = sample(1:10000, simulations[[n]]$replicates, replace=T)
-    list(list( avatar     = as.list(avatars[n,])
-        , simulation = simulations[[n]]   
-        ))
-  })
-
-  simulation_in
+  print("preprocessing")
+  llply(1:nrow(avatars), function(n) {
+    simulation = simulations
+    simulation$seed = sample(1:10000, simulation$replicates, replace=F)
+    list( avatar     = as.list(avatars[n,])
+        , simulation = simulation   
+        )
+  }, .progress="text")
 }
 
 # split avatars into x equal sized chunks
 split_avatars=function(simulation_in, prefix, chunk_size=500) {
+  library(plyr)
   # split into chunks
   x = split(simulation_in, ceiling(seq_along(simulation_in)/chunk_size))
 
   # save chunks
+  print("splitting")
   l_ply(1:length(x), function(i) {
     avatars = x[[i]]
     save(avatars, file=paste(prefix, i, "avatars", "Rdata", sep="."))
@@ -103,14 +106,14 @@ split_avatars=function(simulation_in, prefix, chunk_size=500) {
 }
 
 # combine split avatars based on a file prefix
-combine_avatars = function(prefix) {
+combine_avatars = function(prefix, stored_in = "avatars") {
   files = list.files(pattern=paste(
     prefix,"[1-9][0-9]*", "avatars","Rdata", sep=".")
   )
   all_avs = list()
   for(file in files) {
     load(file)
-    all_avs = append(all_avs, avatars)
+    all_avs = append(all_avs, get(stored_in))
   }
 
   all_avs
