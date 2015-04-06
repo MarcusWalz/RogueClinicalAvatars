@@ -10,7 +10,7 @@ VKORC1G = as.factor(c("G/G", "A/A", "A/G", "Unknown"))
 # "VKORC1T" takes a value of C/C, C/T, T/T, or "Unknown"                         
 VKORC1T = as.factor(c("C/C", "C/T", "T/T", "Unknown"))
 # "CYP2C9" takes a value of *1/*1, *1/*2, *1/*3, *2/*2, *2/*3, *3/*3, or "Unknown"  
-CYP2C9 = as.factor(c("*1/*1", "*1/*2", "*1/*3", "*2/*1","*2/*2", "*2/*3", "*3/*3", "Missing"))
+CYP2C9 = as.factor(c("*1/*1", "*1/*2", "*1/*3", "*2/*1","*2/*2", "*2/*3", "*3/*3"))
 # "GENDER" takes a value of Y or N
 GENDER = as.factor(c("M", "F"))
 
