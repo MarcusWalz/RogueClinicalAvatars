@@ -68,7 +68,6 @@ process_avatar = function(simulation_in) {
             inr_check[day] = day  # checked INR on this day (due to looping we are off by one day when we check inr so 2,4,7 days are clinically 3,5,8 but don't worry it all works out)
             dose = get_protocol(avatar, simulation)(inr, dose, day, inr_check)
 
-            dose = Map(function(x) dose_cat(x, avatar$max_dose), dose)
             print(dose)
         }
       }

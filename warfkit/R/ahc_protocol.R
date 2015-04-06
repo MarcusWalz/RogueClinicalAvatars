@@ -249,10 +249,13 @@
      print(paste("previous dose: ", previous_dose))
      print(paste("day: ", day))
      
+    # We're in the high INR scenario if the previous dose is 0.
     if(previous_dose == 0){
+      # Hold 0 dose for awhile longer 
       if(INR > 3.5){
         dose[(day):(day+3)] = 0
       }else{
+      # Set dose to 85% of the last non-zero dose.
         previous_dose = tail(Filter(function(a) { a != 0 && !is.na(a) }, dose), n=1)
         dose[(day+1):(day + 5)] = previous_dose * 0.85
       }    
