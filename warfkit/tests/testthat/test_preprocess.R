@@ -9,7 +9,7 @@ my_sim = list (
     days = 5
   , protocol = "ahc_clinical"
   , initial_dose = "AHC"
-  , replicates = 1
+  , replicates = 3
   , max_time = 24
   , max_dose = 100
   )
@@ -30,8 +30,7 @@ test_that("Preprocess outputs a list equal to input", {
 
 fst = out[[1]]
 
-test_that("Preprocess is in the described format", {
-
+test_that("Preprocess avatars outputs in the described format", {
   expect_is(fst, "list")
   expect_is(fst$avatar, "list")
   expect_is(fst$simulation, "list")
@@ -43,11 +42,21 @@ snd = out[[2]]
 
 test_that("Assigned Seeds are semi-unique", {
 
-  expect_false(fst$simulation$seed == snd$simulation$seed) 
+  expect_false(all(fst$simulation$seed == snd$simulation$seed)) 
 
 })
 
 test_that("Order is retained", {
   expect_equal(as.list(small_samp[1,]), fst$avatar)
   expect_equal(as.list(small_samp[2,]), snd$avatar)
+})
+
+
+test_that("Split and Combine work", {
+  avatars = preprocess_avatars(sample_warf_avatars, my_sim)
+  split_avatars(avatars, "testing", 20)
+  avatars2 = combine_avatars("testing")
+
+  expect_equal(length(avatars2), length(avatars))
+  expect_equal(avatars,avatars2)
 })

@@ -13,31 +13,6 @@
 ###    simulation function     ###
 ##################################
 
-# avatars = df of avatars
-# simulation = list of simulations (length equal to number of rows in avatar) 
-#   or a single base simulation 
-
-# source("hamberg_2007.R")
-# source("maintenance_protocols.R")
-# source("initial_dose.R")
-# source("process_avatar.R")
-
-# my_av = read.table("sample_avatars.txt", sep="\t", header=T)[1:100,]
-
-# hamburg needs a CYP2C9, let's filter these avatars out for now
-# my_av = my_av[my_av$CYP2C9 != "Missing",]
-
-
-
-# my_sim =
-#  list ( days = 90
-#       , max_dose = 100
-#       , max_time = 24
-#       , protocol = "ahc_clinical"
-#       , initial_dose  = "pginitial_IWPC"
-#       )
-
-
 preprocess_avatars = function( avatars
                           , simulations
                           , build = T
@@ -91,7 +66,13 @@ preprocess_avatars = function( avatars
   }, .progress="text")
 }
 
-# split avatars into x equal sized chunks
+# split avatars into sets of n equal sized chunks s.t. they can be recombined
+# later, s.t.: 
+# 
+#   split_avatars(simulation_in, "prefix")
+#   simulation_in == combine_avatars, "prefix")
+#
+# These functions work on simulation output too.
 split_avatars=function(simulation_in, prefix, chunk_size=500) {
   library(plyr)
   # split into chunks
@@ -101,16 +82,30 @@ split_avatars=function(simulation_in, prefix, chunk_size=500) {
   print("splitting")
   l_ply(1:length(x), function(i) {
     avatars = x[[i]]
-    save(avatars, file=paste(prefix, i, "avatars", "Rdata", sep="."))
+    save(avatars, file=paste(prefix, i, "avatars", "RData", sep="."))
   }, .progress= "text")
 }
 
-# combine split avatars based on a file prefix
+# combine split avatars based on a file prefix. 
 combine_avatars = function(prefix, stored_in = "avatars") {
-  files = list.files(pattern=paste(
-    prefix,"[1-9][0-9]*", "avatars","Rdata", sep=".")
+
+  # get the files in sequential order, outerwise "pre.10.avatars.RData" would
+  # appears before pre.1.avatars.RData.
+
+  nums = sort(
+    as.numeric(
+      gsub("[^0-9]*", "",
+        list.files(
+          pattern=paste(prefix, "[1-9][0-9]*", "avatars", "RData", sep=".")
+        )
+      )
+    )
   )
+
+  files = sapply(nums, function(num) {paste(prefix,num, "avatars", "RData", sep=".")} )
+
   all_avs = list()
+
   for(file in files) {
     load(file)
     all_avs = append(all_avs, get(stored_in))
@@ -118,5 +113,3 @@ combine_avatars = function(prefix, stored_in = "avatars") {
 
   all_avs
 }
-
-# split_avatars(preprocess_avatars(my_av, my_sim), prefix="test", chunk_size=10)
