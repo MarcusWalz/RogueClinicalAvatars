@@ -22,7 +22,7 @@ process_avatar = function(simulation_in) {
 
 
   # find the initial dose
-  avatar$InitialDose = initial_dose( as.data.frame(avatar)
+  init_dose = initial_dose( as.data.frame(avatar)
                                    , simulation$initial_dose)$InitialDose
   # run sim for each replicate
   sim_out = lapply(1:simulation$replicates, function(rep) {
@@ -33,7 +33,7 @@ process_avatar = function(simulation_in) {
     # keep track of the dose superpositioning for each avatar
     # Cs_super_out = array(0, dim=c(simulation$max_time*simulation$days+1
     #                    , num_replicates)) 
-    dose[1] = avatar$InitialDose
+    dose[1] = init_dose
     Cs_rows = simulation$max_time * simulation$days+1
     Cs = matrix(0, nrow = Cs_rows, ncol=simulation$days)
     Cs_super = 0
@@ -72,7 +72,7 @@ process_avatar = function(simulation_in) {
         }
       }
     }
-  list("INR" = inr, "Dose" = dose, "Check" = inr_check)
+  as.data.frame(list("INR" = inr, "Dose" = dose, "Check" = inr_check))
 })
 
 list( avatar     = avatar
