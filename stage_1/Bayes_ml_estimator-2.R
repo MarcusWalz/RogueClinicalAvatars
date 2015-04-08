@@ -292,6 +292,36 @@ Missing_data_selecter=function(data,prob_table,scarcity_cutoff=15,missing_identi
   return(prob_table)
 }
 
+Bayes_ml_impute_unknown_cpt=function(missing_data,training_data,unknown_identifier){
+  data=cbind(missing_data,training_data)
+  indexofinterest=1
+  cNames=names(training_data)
+  scarcity_cutoff=20
+  missing=data[which(missing_data==unknown_identifier),]
+  non_missing_data=data[-which(missing_data==unknown_identifier),]
+  probs=WRAP(data,indexofinterest,cNames,scarcity_cutoff)
+  data[which(missing_data==unknown_identifier),]=(imputer(probs,missing))
+  return(data)
+  
+}
+imputer=function(Probability_table,data){
+  Probabilities=Probability_table$Probabilities
+  Conditions=Probability_table$Conditions
+  missing_data=as.character(data[,1])
+  non_missing_data=data[,-1]
+  for(i in 1:length(missing_data)){
+    condition_set=(non_missing_data[i,])
+    index=1:length(missing_data)
+    for(j in 1:ncol(Conditions)){
+      condition=as.character(condition_set[j][1,1])#No idea why this is necessary, but it is.
+      index=intersect(index,which(Conditions[,j]==condition))
+    }
+    probs=cumsum(as.numeric(as.character(Probabilities[index,])))/sum(as.numeric(as.character(Probabilities[index,])))
+    rand=runif(1)
+    data[i,1]=colnames(Probabilities)[tail(c(1,which(probs<rand)),1)]
+  }
+  data
+}
 if(!test) {
  final_prob_table=function(prob_list,data,scarcity_cutoff=30,missing_identifier="*",filename="Conditional_prob_table.RDeata"){
   for(i in 1:length(prob_list)){
