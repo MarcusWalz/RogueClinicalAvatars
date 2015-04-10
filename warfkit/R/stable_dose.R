@@ -1,5 +1,3 @@
-# Constants
-
 # Sketch. Calculate stable dose through a special kind of
 # function composition. These functions can do two things:
 #

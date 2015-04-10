@@ -72,7 +72,7 @@ process_avatar = function(simulation_in) {
         }
       }
     }
-  as.data.frame(list("INR" = inr, "Dose" = dose, "Check" = inr_check))
+  list("INR" = inr, "Dose" = dose, "Check" = inr_check)
 })
 
 list( avatar     = avatar

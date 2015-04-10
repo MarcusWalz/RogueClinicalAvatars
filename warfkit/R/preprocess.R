@@ -1,3 +1,4 @@
+library(digest)
 
 #This function takes the following arguments and simulates a course of anticoagulation therapy.
 #avatars: A file includes avatars with assigned initial warfarin dose.
@@ -60,9 +61,12 @@ preprocess_avatars = function( avatars
   llply(1:nrow(avatars), function(n) {
     simulation = simulations
     simulation$seed = sample(1:10000, simulation$replicates, replace=F)
-    list( avatar     = as.list(avatars[n,])
-        , simulation = simulation   
-        )
+
+    av = as.list(avatars[n,])
+    # hash together an id.
+    # av$ID = digest(Map(as.character, av))
+    list( avatar     = av
+        , simulation = simulation )
   }, .progress="text")
 }
 
@@ -82,16 +86,15 @@ split_avatars=function(simulation_in, prefix, chunk_size=500) {
   print("splitting")
   l_ply(1:length(x), function(i) {
     avatars = x[[i]]
-    save(avatars, file=paste(prefix, i, "avatars", "RData", sep="."))
+    saveRDS(avatars, file=paste(prefix, i, "avatars", "RData", sep="."))
   }, .progress= "text")
 }
 
 # combine split avatars based on a file prefix. 
-combine_avatars = function(prefix, stored_in = "avatars") {
+combine_avatars = function(prefix) {
 
   # get the files in sequential order, outerwise "pre.10.avatars.RData" would
-  # appears before pre.1.avatars.RData.
-
+  # appears before "pre.1.avatars.RData".
   nums = sort(
     as.numeric(
       gsub("[^0-9]*", "",
@@ -104,12 +107,6 @@ combine_avatars = function(prefix, stored_in = "avatars") {
 
   files = sapply(nums, function(num) {paste(prefix,num, "avatars", "RData", sep=".")} )
 
-  all_avs = list()
 
-  for(file in files) {
-    load(file)
-    all_avs = append(all_avs, get(stored_in))
-  }
-
-  all_avs
+  Reduce(append, Map(readRDS, files))
 }
