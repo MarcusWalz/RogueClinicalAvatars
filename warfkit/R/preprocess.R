@@ -84,9 +84,8 @@ split_avatars=function(simulation_in, prefix, chunk_size=500) {
 
   # save chunks
   print("splitting")
-  l_ply(0:length(x)-1, function(i) {
-    avatars = x[[i+1]]
-    saveRDS(avatars, file=paste(prefix, i, "avatars", "RData", sep="."))
+  l_ply(1:length(x), function(i) {
+    saveRDS(x[[i]], file=paste(prefix, i-1, "avatars", "RData", sep="."))
   }, .progress= "text")
 }
 
@@ -99,7 +98,7 @@ combine_avatars = function(prefix) {
     as.numeric(
       gsub("[^0-9]*", "",
         list.files(
-          pattern=paste(prefix, "[0-9]+", "avatars", "RData", sep=".")
+          pattern=paste(prefix, "[0-9][0-9]*", "avatars", "RData", sep=".")
         )
       )
     )
