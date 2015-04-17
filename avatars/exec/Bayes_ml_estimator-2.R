@@ -6,19 +6,19 @@ require(ggm)
 test=F
 
 if(!test) {
-args <- commandArgs(T)
-bayes_network_model=as.matrix(read.delim(args[1],header=T))
+  args <- commandArgs(T)
+  bayes_network_model=as.matrix(read.delim(args[1],header=T))
 
-Training_data<-as.data.frame(read.delim(args[2],header=T))
+  Training_data<-as.data.frame(read.delim(args[2],header=T))
 
-file_name=(args[3])
-if(length(args)>3){
-  scarcity_cutoff<-as.numeric(args[4])
-  missing_identifier=args[5]
-} else{
-  scarcity_cutoff=30
-  missing_identifier="*"
-}
+  file_name=(args[3])
+  if(length(args)>3){
+    scarcity_cutoff<-as.numeric(args[4])
+    missing_identifier=args[5]
+  } else{
+    scarcity_cutoff=30
+    missing_identifier="*"
+  }
 
   rownames(bayes_network_model)=colnames(bayes_network_model)
   dummy_dag=bayes_network_model
@@ -31,28 +31,32 @@ if(length(args)>3){
 }
 
 Bayes_ml_estimator<-
-function(data,bayes_network_model,scarcity_cutoff=30){
-  if(!is.data.frame(data)){
-    cat('Ay-Caramba!!~!')
-  }
-  if(ncol(data)!=ncol(bayes_network_model)){
-    cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
-  }
+  function(data,bayes_network_model,scarcity_cutoff=30){
+    if(!is.data.frame(data)){
+      cat('Ay-Caramba!!~!')
+    }
+    if(ncol(data)!=ncol(bayes_network_model)){
+      cat("Something is horribly wrong, the number of variables of data and BNM don't agree")
+    }
 
-# topsort matrix
-  rownames(bayes_network_model)=colnames(bayes_network_model)
-  adj_matrix=bayes_network_model
-  adj_matrix[adj_matrix>0]=0
-  adj_matrix[adj_matrix<0]=1
+    # topsort matrix
+    rownames(bayes_network_model)=colnames(bayes_network_model)
+    adj_matrix=bayes_network_model
+    adj_matrix[adj_matrix>0]=0
+    adj_matrix[adj_matrix<0]=1
+    print(adj_matrix)
 
-  bayes_network_model=bayes_network_model[topOrder(adj_matrix),topOrder(adj_matrix)]
+    bayes_network_model=bayes_network_model[topOrder(adj_matrix),topOrder(adj_matrix)]
+    bnm = bayes_network_model
 
-# consturct table
-  table=list()
-  for(i in colnames(bayes_network_model)){
-    conditional_indices=which(bayes_network_model[,i]<0)
-    cNames=sort(-1*bayes_network_model[conditional_indices,i])
-    cNames=names(cNames)
+    # consturct table
+    table=list()
+    for(i in colnames(bayes_network_model)){
+      print(i)
+      cNames=bnm[bnm[,i] < 0,i,drop=F]
+      cNames = rownames(cNames[order(-cNames[,i]),,drop=F])
+      print(cNames)
+
     table[[i]]=WRAP(data,i,cNames,scarcity_cutoff)
   }
  return(table)
@@ -168,6 +172,7 @@ cartesian_condition = function( df      # data frame
   colnames(df) <- c_names
 
   # construct the lookup table by taking the cartesian product
+
   values = list()
   for(colname in c_names) {
     values[[colname]] <- levels(as.factor(df[,colname]))
@@ -182,6 +187,7 @@ cartesian_condition = function( df      # data frame
   }
   
   if(length(c_names) == 0) {
+    print("here")
     out=find_prob_inner(NA) # ROW only used in inner loop
     p_table  = t(out$p_table)
     scarcity = out$scarcity 
