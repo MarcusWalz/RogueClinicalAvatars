@@ -2,10 +2,19 @@
 
 # Why? To keep n small and things fast. Memory usage should be constant. 
 
+# Think of this as a weird shoe factory. All the supplies to make only one shoe
+# are sent in. Then the shoe exits the factory. Then more supplies go back in. 
+# Until all the supplies run out.
+
+# R becomes bottlenecked whenever there is too much supplies sitting around. By
+# doing it this way we keep lookup times fast. So we have an O(n) algorithm instead
+# of an O(n*log(n)) algorithm.
+
 library(iterators) 
 library(itertools)
 
 
+# load avatars outputted by the sim.
 avatar_iter <- function(files) { 
   ihasNext({
     avs = list()
