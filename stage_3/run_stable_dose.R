@@ -15,7 +15,7 @@ compute_stable_dose_iwpc = function(avs) {
 
   # Map Stable Dose Defs for project site 5, 1, 2!
 
-  sapply(1:21, function(ps) { 
+  sapply(1:22, function(ps) { 
          def = get_stable_def(ps)
          as.vector(Map(def, avs))
   })
