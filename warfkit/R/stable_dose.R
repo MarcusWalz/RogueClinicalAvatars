@@ -471,7 +471,7 @@ stable_def_11 = function (simulation) {
 # 12 A cross-sectional study of patients treated with warfarin for at least 2
 # months and with relatively stable anticoagulation.
 stable_def_12 = function (simulation) { 
-  FALSE #TODO
+  simulation$sim_out$Dose[90]
 }
 
 # 13 Patients whose warfarin dose requirement was 1.5 mg per day or less and
@@ -608,6 +608,15 @@ stable_def_21 = function (simulation) {
      , choose_by_days_elapsed
      )(simulation$sim_out)
 }
+
+
+stable_def_22 = function(simulation) {
+  pro_site     = simulation$avatar$PRO_SITE
+  pro_site_num = which(levels(pro_site) == as.character(pro_site))
+
+  get_stable_def( pro_site_num )( simulation )
+}
+
 
 get_stable_def = function (project_site) {
 
