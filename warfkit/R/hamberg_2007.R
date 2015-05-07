@@ -57,13 +57,17 @@ hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24) {
 	gamma = 0.424	# no units
     parameters$gamma = gamma
 
+  if(!exists("EC_50_offset")) {
+     EC_50_offset = 0;
+  }
+
     # EC_50 in mg/L
 	if(VKORC1 == "G/G"){ # Order of genotypes changed
-		EC_50 = rlnormRestricted(log(4.61), sqrt(0.409))
+		EC_50 = rlnormRestricted(log(4.61 + EC_50_offset), sqrt(0.409))
 	} else if((VKORC1 == "G/A") | (VKORC1 == "A/G")){
-		EC_50 = rlnormRestricted(log(3.02), sqrt(0.409))    #rnorm(1, 3.02, 0.409*3.02) # not used in japanese paper
+		EC_50 = rlnormRestricted(log(3.02 + EC_50_offset), sqrt(0.409))    #rnorm(1, 3.02, 0.409*3.02) # not used in japanese paper
 	} else if (VKORC1 == "A/A") {
-		EC_50 = rlnormRestricted(log(2.20), sqrt(0.409))    #rnorm(1, 2.20, 0.409*2.20) # not used in japanese paper
+		EC_50 = rlnormRestricted(log(2.20 + EC_50_offset), sqrt(0.409))    #rnorm(1, 2.20, 0.409*2.20) # not used in japanese paper
 	} else {
 	    stop("ERROR IN HAMBERG_2007.R: the VKORC1 genotype is not supported!")
 	}

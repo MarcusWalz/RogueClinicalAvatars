@@ -1,0 +1,9 @@
+a=commandArgs(T)
+
+EC_50_offset = as.numeric(a[1])
+
+library(warfkit)
+
+a=Map(process_avatar, readRDS("offset_tune.RDS"))
+
+saveRDS(a, file=paste("offset", EC_50_offset, "RDS", sep=".")
