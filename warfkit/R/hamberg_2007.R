@@ -163,7 +163,7 @@ hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24) {
 	    stop("ERROR IN HAMBERG_2007.R: CYP2C9 genotype not recognized fool!")
 	}
 	
- 	F = 0.9 # bioavilability fraction 0-1 (from: "Applied Pharmacokinetics & Pharmacodynamics 4th edition, p.717", some other references)
+ 	F = 0.99 # bioavilability fraction 0-1 (from: "Applied Pharmacokinetics & Pharmacodynamics 4th edition, p.717", some other references)
 
 	ka = 2 # absorption rate (1/hr)
 	
