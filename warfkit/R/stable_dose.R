@@ -612,14 +612,38 @@ stable_def_21 = function (simulation) {
 
 stable_def_22 = function(simulation) {
   pro_site     = simulation$avatar$PRO_SITE
-  pro_site_num = which(levels(pro_site) == as.character(pro_site))
 
-  get_stable_def( pro_site_num )( simulation )
+  get_stable_def( pro_site )( simulation )
 }
 
 
 get_stable_def = function (project_site) {
 
+  if(!is.numeric(project_site)) {
+    alpha = c("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"
+               , "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U"
+               , "V", "W", "X", "Z")
+    project_site = which(alpha == as.character(project_site))
+  }
+
   get(paste("stable_def_", as.character(project_site), sep = ""))
 
 } 
+
+# Pipeline operator for stabe dose
+stable_dose = function(simulation_out, force_def = 22) {
+  s_def = get_stable_def(force_def)
+
+  Map( function(avatar) {
+         flattened_sim_out =
+          Map( function(sim_out) {
+                  avatar$sim_out = as.data.frame(sim_out)
+                  avatar
+               }
+             , avatar$sim_out) 
+
+         avatar$outcome$TD = unlist(Map(s_def, flattened_sim_out))
+         avatar
+       }
+     , simulation_out )
+}
