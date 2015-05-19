@@ -258,7 +258,7 @@ filter_dfs_has_check_lte_days_apart = function(days) {
 # roll multiple predicates into one. Used in exe.
 preds = function(predicates=c()) { function(df) {
   if(length(predicates) == 0) { return(TRUE) }
-  all(Map(function(p) { p(df) }, predicates))
+  all(unlist(Map(function(p) { p(df) }, predicates)))
 }}
 
 # Selectors. Reduce lists of dataframes to one dataframe. Pick the latest (i.e. rightmost) dataframe in a tie.
