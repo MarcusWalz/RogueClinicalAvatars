@@ -642,7 +642,11 @@ stable_dose = function(simulation_out, force_def = 22) {
                }
              , avatar$sim_out) 
 
-				 TD_name = paste(td, force_def, sep="-")
+				if(force_def == 22) {
+				 TD_name = "td"
+				} else {
+				 TD_name = paste("td", force_def, sep="-")
+				}
          avatar$outcome[[TD_name]] = unlist(Map(s_def, flattened_sim_out))
          avatar
        }
