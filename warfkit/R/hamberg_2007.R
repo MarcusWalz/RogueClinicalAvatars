@@ -160,13 +160,13 @@ hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, AMI, SMOKER, SS, m
 	    stop("ERROR IN HAMBERG_2007.R: CYP2C9 genotype not recognized fool!")
 	}
 
-	if(AMI) {
-		CL_s = CL_s*( 1 - 0.13 )
-	}
+#	if(AMI) {
+#		CL_s = CL_s*( 1 - 0.13 )
+#	}
 
-	if(SMOKER) {
-		CL_s = CL_s*( 1 + 0.10 )
-	}
+#	if(SMOKER) {
+#		CL_s = CL_s*( 1 + 0.10 )
+#	}
 	
  	F = 1.0 # seems to be more realistic than the 0.9 from:
 	# bioavilability fraction 0-1 (from: "Applied Pharmacokinetics & Pharmacodynamics 4th edition, p.717", some other references)
