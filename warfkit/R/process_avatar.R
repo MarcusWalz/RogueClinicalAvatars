@@ -27,6 +27,7 @@ process_avatar = function(simulation_in) {
   # run sim for each replicate
   sim_out = lapply(1:simulation$replicates, function(rep) {
     set.seed(simulation$seed[rep])
+		protocol  = get_protocol(avatar, simulation)
     inr       = array(NA, simulation$days)
     inr_check = array(0, simulation$days)
     dose      = array(NA, simulation$days)
@@ -47,6 +48,8 @@ process_avatar = function(simulation_in) {
                                  , avatar$AGE
                                  , as.character(avatar$CYP2C9)
                                  , as.character(avatar$VKORC1G)
+																 , avatar$AMI == 'Y'
+																 , avatar$SMOKER
                                  , 1
                                  , simulation$max_time * simulation$days
                                  )
@@ -66,8 +69,7 @@ process_avatar = function(simulation_in) {
 
         if (is.na(dose[min(day+1, simulation$days)])) {
             inr_check[day] = day  # checked INR on this day (due to looping we are off by one day when we check inr so 2,4,7 days are clinically 3,5,8 but don't worry it all works out)
-            dose = get_protocol(avatar, simulation)(inr, dose, day, inr_check)
-
+            dose = protocol(inr, dose, day, inr_check)
             print(dose)
         }
       }
@@ -80,6 +82,8 @@ list( avatar     = avatar
       , sim_out    = sim_out
       )
 }
+
+
 
 process_avatars = function(preprocessed_avatars) {
 # Maps process_avatars over an Array of avatars.

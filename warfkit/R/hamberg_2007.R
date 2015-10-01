@@ -29,7 +29,7 @@
 #	-RSE% = SD / mean * 100, so when we solve for SD we get: SD = RSE / 100 * mean
 
 
-hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24) {
+hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, AMI, SMOKER, SS, maxTime=24) {
 
 	library(deSolve)
 	
@@ -158,6 +158,14 @@ hamberg_2007 <- function(dose, Cs_super, AGE, CYP2C9, VKORC1, SS, maxTime=24) {
 		CL_s = CL_s*(1-0.852)*cyp_1_1
 	} else {
 	    stop("ERROR IN HAMBERG_2007.R: CYP2C9 genotype not recognized fool!")
+	}
+
+	if(AMI) {
+		CL_s = CL_s*( 1 - 0.13 )
+	}
+
+	if(SMOKER) {
+		CL_s = CL_s*( 1 + 0.10 )
 	}
 	
  	F = 1.0 # seems to be more realistic than the 0.9 from:

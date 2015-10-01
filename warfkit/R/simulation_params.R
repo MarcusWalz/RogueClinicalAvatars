@@ -3,10 +3,10 @@
 
 validate_simulation_params = function(simulation) {
   # this function won't work outside the libarry
-  if(!paste(simulation$protocol, "_protocol", sep="") %in% list_protocols()) {
-    stop(paste("Unknown protocol", simulation$protocol
-              , ". Installed protocols:", list_protocols()))
-  }
+  #if(!paste(simulation$protocol, "_protocol", sep="") %in% list_protocols()) {
+  #  stop(paste("Unknown protocol", simulation$protocol
+  #            , ". Installed protocols:", list_protocols()))
+  #}
   
   #TODO clean up initial_dose.R and make a test like above for
   # initial dose

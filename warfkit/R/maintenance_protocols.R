@@ -1466,8 +1466,37 @@ eu_pact_ahc_protocol = function(avatar, simulation) {
 # returns a list of protocols
 list_protocols = function() ( apropos("*_protocol$"))
 
+
+
 # run protocol based on simulation param
 get_protocol = function(avatar, simulation) {
-  get(paste(simulation$protocol, "protocol", sep="_"))(avatar, simulation)
+	if(is.character(simulation$protocol)) {
+		return(
+			get(paste(simulation$protocol, "protocol", sep="_"))(avatar, simulation)
+		)
+	} else if(is.function(simulation$protocol)) {
+		return(simulation$protocol(avatar, simulation))
+	} else {
+		cat("protocol not found!!!")
+		quit()
+	}
 }
 
+fuckup_protocol = function(protocol, p) {
+	function(avatar, simulation) {
+		perfect_doses = rep(NA, simulation$days)	
+		fuckup_days = sample(c(1,0), simulation$days, replace=T, prob=c(1-p,p))
+		proto = protocol(avatar, simuation)
+
+		function(INR, dose, day, check){
+		# the assign op is important
+			if(all(is.na(perfect_doses))) {
+				cat("setting init dose")
+				perfect_doses <<- dose
+			}
+			perfect_doses <<- proto(INR, perfect_doses, day, check)
+
+			perfect_doses * fuckup_days
+		}
+	}
+}

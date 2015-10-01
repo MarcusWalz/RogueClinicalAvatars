@@ -13,7 +13,7 @@ my_sim =
       , max_dose = 100
       , max_time = 24
       , replicates = 100
-      , protocol = "fixed_dose"
+      , protocol = fuckup_protocol(fixed_dose_protocol, 0.3)
       , initial_dose  = "pginitial_IWPC"
       )
 
